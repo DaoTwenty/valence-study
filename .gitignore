@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Large audio files – add exceptions below if you want to commit small samples
+audio/*.wav
+audio/*.mp3
+audio/*.ogg
+audio/*.flac
+
+# Keep the placeholder
+!audio/.gitkeep

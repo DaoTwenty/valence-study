@@ -1,0 +1,32 @@
+[
+  {
+    "id": "practice_001",
+    "file": "audio/practice_001.wav",
+    "group": "practice",
+    "notes": "Practice stimulus – replace with your actual practice audio"
+  },
+  {
+    "id": "stim_001",
+    "file": "audio/stim_001.wav",
+    "group": "A",
+    "notes": "Replace with your actual stimuli"
+  },
+  {
+    "id": "stim_002",
+    "file": "audio/stim_002.wav",
+    "group": "A",
+    "notes": ""
+  },
+  {
+    "id": "stim_003",
+    "file": "audio/stim_003.wav",
+    "group": "B",
+    "notes": ""
+  },
+  {
+    "id": "stim_004",
+    "file": "audio/stim_004.wav",
+    "group": "B",
+    "notes": ""
+  }
+]

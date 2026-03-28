@@ -1,0 +1,108 @@
+/* ── Global ─────────────────────────────────────────────────────────────── */
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f5f5f5;
+}
+
+.jspsych-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* ── Shared containers ──────────────────────────────────────────────────── */
+.access-code-container,
+.consent-container,
+.instructions-container,
+.concept-container,
+.debrief-container {
+  background: #fff;
+  border-radius: 8px;
+  padding: 32px 40px;
+  max-width: 680px;
+  margin: 0 auto;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+h2 {
+  margin-top: 0;
+  color: #222;
+}
+
+ul {
+  line-height: 1.8;
+}
+
+/* ── Access code input ──────────────────────────────────────────────────── */
+#access-code-input {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+
+#access-code-input:focus {
+  outline: none;
+  border-color: #555;
+}
+
+/* ── Trial prompt ───────────────────────────────────────────────────────── */
+.trial-prompt {
+  font-size: 1.05rem;
+  color: #333;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+/* ── Slider labels ──────────────────────────────────────────────────────── */
+.jspsych-audio-slider-response-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ── jsPsych button overrides ───────────────────────────────────────────── */
+.jspsych-btn {
+  font-size: 0.95rem;
+  padding: 10px 28px;
+  border-radius: 5px;
+  background: #2c6fad;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: background 0.15s;
+}
+
+.jspsych-btn:hover:not(:disabled) {
+  background: #1e5490;
+}
+
+.jspsych-btn:disabled {
+  background: #aaa;
+  cursor: not-allowed;
+}
+
+/* ── Consent text ───────────────────────────────────────────────────────── */
+.consent-container p,
+.concept-container p,
+.instructions-container p {
+  line-height: 1.7;
+  color: #444;
+}
+
+/* ── Status message ─────────────────────────────────────────────────────── */
+.status-message {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.status-message.error {
+  color: #c0392b;
+}
