@@ -1,159 +1,244 @@
-/* ── Reset / global ─────────────────────────────────────────────────────── */
+/* ── Design tokens ──────────────────────────────────────────────────────── */
+:root {
+  --bg:          #0f1117;
+  --surface:     #1a1d27;
+  --surface-2:   #22263a;
+  --border:      rgba(255,255,255,0.07);
+  --accent:      #6c8ef5;
+  --accent-dim:  #3a4f9a;
+  --text:        #e8eaf0;
+  --text-muted:  #7a7f96;
+  --text-faint:  #3f4460;
+  --success:     #4db87a;
+  --danger:      #e05c5c;
+  --radius:      12px;
+  --radius-sm:   7px;
+  --font:        'Inter', 'Segoe UI', system-ui, sans-serif;
+  --mono:        'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* ── Base ───────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; }
+
 body {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  background: #f5f5f5;
   margin: 0;
   padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.6;
 }
 
-/* Push the entire experiment away from the top of the viewport */
+/* ── jsPsych container ──────────────────────────────────────────────────── */
+.jspsych-display-element {
+  background: var(--bg) !important;
+}
+
 #jspsych-content {
-  padding-top: 48px !important;
-  padding-bottom: 48px !important;
-  box-sizing: border-box;
+  padding: 56px 24px !important;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
-/* ── Shared content containers ──────────────────────────────────────────── */
+/* ── Shared content card ────────────────────────────────────────────────── */
 .access-code-container,
 .consent-container,
 .instructions-container,
 .concept-container,
 .debrief-container {
-  background: #fff;
-  border-radius: 8px;
-  padding: 32px 40px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 40px 48px;
   max-width: 680px;
-  margin: 0 auto;
+  width: 100%;
   text-align: left;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
 }
 
-h2 { margin-top: 0; color: #222; }
-ul { line-height: 1.8; }
-p  { line-height: 1.7; color: #444; }
+h2 {
+  margin: 0 0 20px;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+p  { color: var(--text-muted); margin: 0 0 12px; }
+ul { color: var(--text-muted); padding-left: 20px; }
+li { margin-bottom: 8px; }
+strong { color: var(--text); font-weight: 500; }
 
 /* ── Text inputs ────────────────────────────────────────────────────────── */
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
 #access-code-input,
 #age-input,
 #debrief-input {
   display: block;
-  width: 100%;
-  max-width: 480px;
-  margin-top: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.95rem;
   padding: 10px 14px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  box-sizing: border-box;
-  font-family: inherit;
+  width: 100%;
+  max-width: 400px;
+  margin-top: 4px;
+  transition: border-color 0.15s;
+  outline: none;
 }
-#age-input     { max-width: 120px; }
-#debrief-input { resize: vertical; }
+#age-input     { max-width: 110px; }
+#debrief-input { resize: vertical; max-width: 100%; }
 
 #access-code-input:focus,
 #age-input:focus,
 #debrief-input:focus {
-  outline: none;
-  border-color: #555;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(108,142,245,0.15);
 }
 
-/* ── jsPsych button overrides ───────────────────────────────────────────── */
+/* ── jsPsych button ─────────────────────────────────────────────────────── */
 .jspsych-btn {
-  font-size: 0.95rem;
-  padding: 10px 28px;
-  border-radius: 5px;
-  background: #2c6fad;
+  display: inline-block;
+  margin-top: 24px;
+  padding: 11px 30px;
+  background: var(--accent);
   color: #fff;
+  font-family: var(--font);
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   border: none;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  margin-top: 16px;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  box-shadow: 0 2px 12px rgba(108,142,245,0.25);
 }
-.jspsych-btn:hover:not(:disabled) { background: #1e5490; }
+.jspsych-btn:hover:not(:disabled) {
+  background: #7fa0ff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(108,142,245,0.35);
+}
+.jspsych-btn:active:not(:disabled) { transform: translateY(0); }
 .jspsych-btn:disabled {
-  background: #bbb;
+  background: var(--surface-2);
+  color: var(--text-faint);
+  box-shadow: none;
   cursor: not-allowed;
-  opacity: 0.7;
 }
 
-/* ── Rating trial layout ────────────────────────────────────────────────── */
+/* ── Survey multi-choice overrides ─────────────────────────────────────── */
+.jspsych-survey-multi-choice-preamble,
+.jspsych-survey-multi-choice-question-prompt {
+  color: var(--text-muted) !important;
+}
+.jspsych-survey-multi-choice-option label {
+  color: var(--text) !important;
+}
+.jspsych-survey-multi-choice-option input[type="radio"] {
+  accent-color: var(--accent);
+}
+
+/* ── Rating trial ───────────────────────────────────────────────────────── */
 .rating-trial {
-  max-width: 620px;
-  margin: 0 auto;
+  max-width: 640px;
+  width: 100%;
   text-align: center;
 }
 
 .trial-prompt {
-  font-size: 1.05rem;
-  color: #333;
-  margin-bottom: 8px;
+  font-size: 1rem;
+  color: var(--text-muted);
+  margin: 0 0 6px;
+  font-weight: 400;
 }
 
-/* Listen status line */
 .listen-status {
-  font-size: 0.9rem;
-  color: #888;
-  margin: 0 0 20px;
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  margin: 0 0 24px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   min-height: 1.4em;
-  transition: color 0.3s;
+  transition: color 0.4s;
 }
-.listen-status.status-ready { color: #27ae60; font-weight: 600; }
+.listen-status.status-ready {
+  color: var(--success);
+}
 
-/* ── Audio player ───────────────────────────────────────────────────────── */
+/* ── Audio player card ──────────────────────────────────────────────────── */
 .audio-player {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: #eef2f7;
-  border-radius: 10px;
-  padding: 14px 18px;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
   margin-bottom: 28px;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
 }
 
+/* Play / pause / replay button */
 .play-pause-btn {
   flex-shrink: 0;
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: none;
-  background: #2c6fad;
-  color: #fff;
-  font-size: 1rem;
+  border: 2px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-size: 1.1rem;
+  line-height: 1;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
   display: flex;
   align-items: center;
   justify-content: center;
-  white-space: nowrap;
-  overflow: hidden;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
 }
 .play-pause-btn:hover:not(:disabled) {
-  background: #1e5490;
-  transform: scale(1.05);
+  background: var(--accent);
+  color: #fff;
+  transform: scale(1.08);
 }
 .play-pause-btn:disabled {
-  background: #aaa;
+  border-color: var(--text-faint);
+  color: var(--text-faint);
   cursor: not-allowed;
 }
 
-/* Progress bar */
+/* Progress track */
 .progress-track {
   flex: 1;
-  height: 8px;
-  background: #d0d7e3;
-  border-radius: 4px;
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
   position: relative;
-  cursor: default;       /* not-allowed until first listen done */
+  cursor: default;
+  overflow: visible;
 }
 .progress-track.seekable { cursor: pointer; }
 
 .progress-fill {
   height: 100%;
-  background: #2c6fad;
-  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+  border-radius: 3px;
   width: 0%;
   pointer-events: none;
+  transition: none;
 }
 
 .progress-cursor {
@@ -161,68 +246,107 @@ p  { line-height: 1.7; color: #444; }
   top: 50%;
   left: 0%;
   transform: translate(-50%, -50%);
-  width: 16px;
-  height: 16px;
-  background: #2c6fad;
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
   border-radius: 50%;
-  border: 3px solid #fff;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 2px var(--accent);
   pointer-events: none;
-  transition: left 0s;
 }
 
 .time-display {
   flex-shrink: 0;
-  font-size: 0.82rem;
-  color: #666;
-  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  font-family: var(--mono);
+  color: var(--text-muted);
   white-space: nowrap;
-  min-width: 80px;
+  min-width: 82px;
   text-align: right;
 }
 
-/* ── Slider section ─────────────────────────────────────────────────────── */
-.slider-section { margin-top: 4px; }
+/* ── Valence slider section ─────────────────────────────────────────────── */
+.slider-section {
+  margin-top: 4px;
+}
 
 .slider-hint {
-  font-size: 0.88rem;
-  color: #aaa;
-  margin: 0 0 14px;
+  font-size: 0.8rem;
+  color: var(--text-faint);
+  margin: 0 0 16px;
   min-height: 1.4em;
+  letter-spacing: 0.02em;
   transition: color 0.3s;
 }
-.slider-hint.hint-active { color: #555; }
+.slider-hint.hint-active { color: var(--text-muted); }
 
+/* Grey-out the whole wrapper while disabled */
 .slider-wrapper {
-  position: relative;
-  transition: opacity 0.3s;
+  transition: opacity 0.4s;
 }
-
-/* Greyed-out state while disabled */
 .slider-wrapper:has(input:disabled) {
-  opacity: 0.35;
+  opacity: 0.2;
   pointer-events: none;
 }
 
+/* Slider track */
 #valence-slider {
+  -webkit-appearance: none;
+  appearance: none;
   width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(
+    to right,
+    #e05c5c,
+    #b07ad4 50%,
+    #4db87a
+  );
   cursor: pointer;
+  outline: none;
 }
 #valence-slider:disabled { cursor: not-allowed; }
+
+#valence-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text);
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 0 2px var(--accent), 0 2px 8px rgba(0,0,0,0.4);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+#valence-slider:not(:disabled)::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+#valence-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text);
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 0 2px var(--accent), 0 2px 8px rgba(0,0,0,0.4);
+  cursor: pointer;
+}
 
 .slider-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 0.8rem;
-  color: #666;
-  margin-top: 6px;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  margin-top: 10px;
+  letter-spacing: 0.02em;
 }
 
-/* ── Status message (submit screen) ────────────────────────────────────── */
+/* ── Status / submit screen ─────────────────────────────────────────────── */
 .status-message {
   text-align: center;
-  padding: 60px 20px;
-  font-size: 1.1rem;
-  color: #333;
+  padding: 60px 24px;
+  color: var(--text-muted);
+  font-size: 1rem;
+  max-width: 480px;
 }
-.status-message.error { color: #c0392b; }
+.status-message h2 { color: var(--text); }
+.status-message.error { color: var(--danger); }
