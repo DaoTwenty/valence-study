@@ -1,0 +1,10 @@
+{
+  "name": "study-interface",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "prestart": "node scripts/build-stimuli.js",
+    "start": "npx live-server --port=3000 --host=localhost --no-browser",
+    "setup": "node scripts/generate-dummy-audio.js"
+  }
+}

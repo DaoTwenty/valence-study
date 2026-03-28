@@ -1,15 +1,19 @@
-/* ── Global ─────────────────────────────────────────────────────────────── */
+/* ── Reset / global ─────────────────────────────────────────────────────── */
 body {
   font-family: 'Segoe UI', Arial, sans-serif;
   background: #f5f5f5;
+  margin: 0;
+  padding: 0;
 }
 
-.jspsych-content {
-  max-width: 800px;
-  margin: 0 auto;
+/* Push the entire experiment away from the top of the viewport */
+#jspsych-content {
+  padding-top: 48px !important;
+  padding-bottom: 48px !important;
+  box-sizing: border-box;
 }
 
-/* ── Shared containers ──────────────────────────────────────────────────── */
+/* ── Shared content containers ──────────────────────────────────────────── */
 .access-code-container,
 .consent-container,
 .instructions-container,
@@ -24,45 +28,33 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-h2 {
-  margin-top: 0;
-  color: #222;
-}
+h2 { margin-top: 0; color: #222; }
+ul { line-height: 1.8; }
+p  { line-height: 1.7; color: #444; }
 
-ul {
-  line-height: 1.8;
-}
-
-/* ── Access code input ──────────────────────────────────────────────────── */
-#access-code-input {
+/* ── Text inputs ────────────────────────────────────────────────────────── */
+#access-code-input,
+#age-input,
+#debrief-input {
   display: block;
   width: 100%;
-  max-width: 320px;
-  margin-top: 12px;
+  max-width: 480px;
+  margin-top: 10px;
   padding: 10px 14px;
   font-size: 1rem;
   border: 1px solid #ccc;
   border-radius: 5px;
   box-sizing: border-box;
+  font-family: inherit;
 }
+#age-input     { max-width: 120px; }
+#debrief-input { resize: vertical; }
 
-#access-code-input:focus {
+#access-code-input:focus,
+#age-input:focus,
+#debrief-input:focus {
   outline: none;
   border-color: #555;
-}
-
-/* ── Trial prompt ───────────────────────────────────────────────────────── */
-.trial-prompt {
-  font-size: 1.05rem;
-  color: #333;
-  margin-bottom: 24px;
-  text-align: center;
-}
-
-/* ── Slider labels ──────────────────────────────────────────────────────── */
-.jspsych-audio-slider-response-container {
-  max-width: 600px;
-  margin: 0 auto;
 }
 
 /* ── jsPsych button overrides ───────────────────────────────────────────── */
@@ -77,32 +69,160 @@ ul {
   margin-top: 16px;
   transition: background 0.15s;
 }
-
-.jspsych-btn:hover:not(:disabled) {
-  background: #1e5490;
+.jspsych-btn:hover:not(:disabled) { background: #1e5490; }
+.jspsych-btn:disabled {
+  background: #bbb;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
-.jspsych-btn:disabled {
+/* ── Rating trial layout ────────────────────────────────────────────────── */
+.rating-trial {
+  max-width: 620px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.trial-prompt {
+  font-size: 1.05rem;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+/* Listen status line */
+.listen-status {
+  font-size: 0.9rem;
+  color: #888;
+  margin: 0 0 20px;
+  min-height: 1.4em;
+  transition: color 0.3s;
+}
+.listen-status.status-ready { color: #27ae60; font-weight: 600; }
+
+/* ── Audio player ───────────────────────────────────────────────────────── */
+.audio-player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #eef2f7;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 28px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.play-pause-btn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: #2c6fad;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.play-pause-btn:hover:not(:disabled) {
+  background: #1e5490;
+  transform: scale(1.05);
+}
+.play-pause-btn:disabled {
   background: #aaa;
   cursor: not-allowed;
 }
 
-/* ── Consent text ───────────────────────────────────────────────────────── */
-.consent-container p,
-.concept-container p,
-.instructions-container p {
-  line-height: 1.7;
-  color: #444;
+/* Progress bar */
+.progress-track {
+  flex: 1;
+  height: 8px;
+  background: #d0d7e3;
+  border-radius: 4px;
+  position: relative;
+  cursor: default;       /* not-allowed until first listen done */
+}
+.progress-track.seekable { cursor: pointer; }
+
+.progress-fill {
+  height: 100%;
+  background: #2c6fad;
+  border-radius: 4px;
+  width: 0%;
+  pointer-events: none;
 }
 
-/* ── Status message ─────────────────────────────────────────────────────── */
+.progress-cursor {
+  position: absolute;
+  top: 50%;
+  left: 0%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  background: #2c6fad;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  pointer-events: none;
+  transition: left 0s;
+}
+
+.time-display {
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  color: #666;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: 80px;
+  text-align: right;
+}
+
+/* ── Slider section ─────────────────────────────────────────────────────── */
+.slider-section { margin-top: 4px; }
+
+.slider-hint {
+  font-size: 0.88rem;
+  color: #aaa;
+  margin: 0 0 14px;
+  min-height: 1.4em;
+  transition: color 0.3s;
+}
+.slider-hint.hint-active { color: #555; }
+
+.slider-wrapper {
+  position: relative;
+  transition: opacity 0.3s;
+}
+
+/* Greyed-out state while disabled */
+.slider-wrapper:has(input:disabled) {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+#valence-slider {
+  width: 100%;
+  cursor: pointer;
+}
+#valence-slider:disabled { cursor: not-allowed; }
+
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 6px;
+}
+
+/* ── Status message (submit screen) ────────────────────────────────────── */
 .status-message {
   text-align: center;
   padding: 60px 20px;
   font-size: 1.1rem;
   color: #333;
 }
-
-.status-message.error {
-  color: #c0392b;
-}
+.status-message.error { color: #c0392b; }

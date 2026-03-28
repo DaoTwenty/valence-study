@@ -4,12 +4,12 @@
 //
 // SETUP: Replace SCRIPT_URL with the deployed Google Apps Script web app URL.
 //
-const SCRIPT_URL = "REPLACE_WITH_YOUR_APPS_SCRIPT_URL";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhM3uZM_R9dHbC-XQs2TCNjV7JHIYPRiR4ajc68hL5gq6_CB_dFE1vjnlLyIFjTq8d/exec";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function generateParticipantId() {
-  return "P_" + Math.random().toString(36).substr(2, 9).toUpperCase();
+  return "P_" + Math.random().toString(36).slice(2, 11).toUpperCase();
 }
 
 // ── Session globals ──────────────────────────────────────────────────────────
@@ -67,9 +67,21 @@ async function init() {
                autocomplete="off" />
       </div>`,
     choices: ["Continue"],
-    on_finish: function () {
+    on_load: function () {
+      // Capture value immediately on every keystroke so on_finish doesn't
+      // depend on the DOM still being present.
       const el = document.getElementById("access-code-input");
-      access_code = el ? el.value.trim() : "";
+      if (el) {
+        el.addEventListener("input", function () {
+          access_code = el.value.trim();
+        });
+      }
+    },
+    on_finish: function () {
+      // access_code already updated live via on_load listener;
+      // fall back to direct read just in case.
+      const el = document.getElementById("access-code-input");
+      if (el) access_code = el.value.trim();
       jsPsych.data.addProperties({ access_code });
     },
   };
@@ -130,20 +142,25 @@ async function init() {
   // SCREEN 4 – Age (optional)
   // ==========================================================================
 
+  let _age = "";
   const ageTrial = {
-    type: jsPsychSurveyText,
-    preamble: "<h2>About You</h2>",
-    questions: [
-      {
-        prompt: "What is your age? (optional)",
-        name: "age",
-        placeholder: "e.g., 25",
-        required: false,
-        columns: 8,
-      },
-    ],
-    on_finish: function (data) {
-      jsPsych.data.addProperties({ q_age: data.response.age || "" });
+    type: jsPsychHtmlButtonResponse,
+    stimulus: `
+      <div class="access-code-container">
+        <h2>About You</h2>
+        <label for="age-input">What is your age? (optional)</label>
+        <input type="number" id="age-input" min="1" max="120"
+               placeholder="e.g., 25" autocomplete="off" />
+      </div>`,
+    choices: ["Continue"],
+    on_load: function () {
+      const el = document.getElementById("age-input");
+      if (el) el.addEventListener("input", () => { _age = el.value.trim(); });
+    },
+    on_finish: function () {
+      const el = document.getElementById("age-input");
+      if (el) _age = el.value.trim();
+      jsPsych.data.addProperties({ q_age: _age });
     },
   };
 
@@ -221,129 +238,211 @@ async function init() {
   };
 
   // ==========================================================================
-  // Rating trial factory
+  // Rating trial factory – fully custom HTML player
   // ==========================================================================
 
   function buildRatingTrial(stim, blockType) {
-    // Per-trial state (captured in closure)
-    let t_trial_start = null;
-    let t_audio_start = null;
-    let t_audio_end = null;
+    let t_trial_start    = null;
+    let t_audio_start    = null;
+    let t_audio_end      = null;
     let t_first_slider_move = null;
-    let slider_events = [];
-    let mouse_clicks = [];
-    let sliderInputListener = null;
-    let clickListener = null;
-    let sliderObserver = null;
+    let slider_events    = [];
+    let mouse_clicks     = [];
+    let audioEl          = null;
+    let rafId            = null;
 
     return {
-      type: jsPsychAudioSliderResponse,
-      stimulus: stim.file,
-      labels: ["Very unpleasant", "Neutral", "Very pleasant"],
-      slider_start: 50,
-      min: 0,
-      max: 100,
-      step: 1,
-      require_movement: true,
-      response_allowed_while_playing: false,
-      prompt: `<p class="trial-prompt">
-        Please rate how pleasant or unpleasant the emotion evoked by this music feels to you.
-      </p>`,
+      type: jsPsychHtmlButtonResponse,
+      // Disable the Next button via HTML attribute from the start
+      button_html: '<button class="jspsych-btn" id="next-btn" disabled>%choice%</button>',
+      choices: ["Next"],
+
+      stimulus: `
+        <div class="rating-trial">
+          <p class="trial-prompt">
+            Please rate how pleasant or unpleasant the emotion evoked by this music feels to you.
+          </p>
+
+          <p class="listen-status" id="listen-status">
+            Listen to the excerpt before rating.
+          </p>
+
+          <!-- ── Audio player ── -->
+          <div class="audio-player">
+            <button class="play-pause-btn" id="play-pause-btn" disabled title="Loading…">
+              ▶
+            </button>
+            <div class="progress-track" id="progress-track">
+              <div class="progress-fill"   id="progress-fill"></div>
+              <div class="progress-cursor" id="progress-cursor"></div>
+            </div>
+            <span class="time-display" id="time-display">0:00 / 0:00</span>
+          </div>
+
+          <!-- ── Valence slider ── -->
+          <div class="slider-section">
+            <p class="slider-hint" id="slider-hint">
+              Rating available after you listen to the full excerpt.
+            </p>
+            <div class="slider-wrapper" id="slider-wrapper">
+              <input type="range" id="valence-slider"
+                     min="0" max="100" value="50" step="1" disabled />
+              <div class="slider-labels">
+                <span>Very unpleasant</span>
+                <span>Neutral</span>
+                <span>Very pleasant</span>
+              </div>
+            </div>
+          </div>
+        </div>`,
 
       on_start: function () {
-        // Reset per-trial state
-        t_trial_start = Date.now();
-        t_audio_start = null;
-        t_audio_end = null;
+        t_trial_start       = Date.now();
+        t_audio_start       = null;
+        t_audio_end         = null;
         t_first_slider_move = null;
-        slider_events = [];
-        mouse_clicks = [];
+        slider_events       = [];
+        mouse_clicks        = [];
       },
 
       on_load: function () {
-        // Approximate audio start time (audio begins playing shortly after load)
-        t_audio_start = Date.now();
+        const playBtn      = document.getElementById("play-pause-btn");
+        const progressFill = document.getElementById("progress-fill");
+        const progCursor   = document.getElementById("progress-cursor");
+        const timeDisplay  = document.getElementById("time-display");
+        const slider       = document.getElementById("valence-slider");
+        const sliderHint   = document.getElementById("slider-hint");
+        const listenStatus = document.getElementById("listen-status");
+        const nextBtn      = document.getElementById("next-btn");
+        const progressTrack = document.getElementById("progress-track");
 
-        // ── Detect audio end via MutationObserver on slider disabled attribute ──
-        // When response_allowed_while_playing=false, jsPsych sets slider.disabled=true
-        // during playback and removes it when audio ends.
-        const slider = document.getElementById("jspsych-audio-slider-response-slider");
-        if (slider) {
-          sliderObserver = new MutationObserver(function (mutations) {
-            mutations.forEach(function (mutation) {
-              if (mutation.attributeName === "disabled" && !slider.disabled) {
-                t_audio_end = Date.now();
-                sliderObserver.disconnect();
-                sliderObserver = null;
-              }
-            });
-          });
-          sliderObserver.observe(slider, { attributes: true });
+        let hasListenedOnce = false;
 
-          // ── Slider interaction trace ────────────────────────────────────────
-          sliderInputListener = function (e) {
-            const t = Date.now();
-            const value = parseInt(e.target.value, 10);
-            if (t_first_slider_move === null) t_first_slider_move = t;
-            slider_events.push({ t, value });
-          };
-          slider.addEventListener("input", sliderInputListener);
+        function fmt(s) {
+          const m = Math.floor(s / 60);
+          return m + ":" + String(Math.floor(s % 60)).padStart(2, "0");
         }
 
-        // ── Mouse click trace (optional) ────────────────────────────────────
+        function updateProgress() {
+          if (!audioEl || !audioEl.duration) return;
+          const pct = audioEl.currentTime / audioEl.duration;
+          progressFill.style.width       = (pct * 100) + "%";
+          progCursor.style.left          = (pct * 100) + "%";
+          timeDisplay.textContent        = fmt(audioEl.currentTime) + " / " + fmt(audioEl.duration);
+          if (!audioEl.paused && !audioEl.ended) {
+            rafId = requestAnimationFrame(updateProgress);
+          }
+        }
+
+        // ── Build audio element ────────────────────────────────────────────
+        audioEl = new Audio(stim.file);
+
+        audioEl.addEventListener("canplaythrough", function () {
+          playBtn.disabled        = false;
+          playBtn.title           = "Play";
+          timeDisplay.textContent = "0:00 / " + fmt(audioEl.duration);
+        }, { once: true });
+
+        audioEl.addEventListener("error", function () {
+          listenStatus.textContent = "⚠ Audio failed to load: " + stim.file;
+          listenStatus.style.color = "#c0392b";
+        });
+
+        audioEl.addEventListener("play", function () {
+          playBtn.textContent = "⏸";
+          playBtn.title       = "Pause";
+          if (!t_audio_start) t_audio_start = Date.now();
+          rafId = requestAnimationFrame(updateProgress);
+        });
+
+        audioEl.addEventListener("pause", function () {
+          playBtn.textContent = "▶";
+          playBtn.title       = hasListenedOnce ? "Play" : "Resume";
+          if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+          updateProgress();
+        });
+
+        audioEl.addEventListener("ended", function () {
+          playBtn.textContent = "↻";
+          playBtn.title       = "Play again";
+          if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+          updateProgress();
+
+          if (!hasListenedOnce) {
+            hasListenedOnce       = true;
+            t_audio_end           = Date.now();
+            // Unlock slider + seeking
+            slider.disabled          = false;
+            progressTrack.classList.add("seekable");
+            sliderHint.textContent   = "Move the slider to indicate your rating, then click Next.";
+            sliderHint.classList.add("hint-active");
+            listenStatus.textContent = "✓ Now rate the excerpt and click Next.";
+            listenStatus.classList.add("status-ready");
+          }
+        });
+
+        // ── Play / pause toggle ────────────────────────────────────────────
+        playBtn.addEventListener("click", function () {
+          if (audioEl.paused || audioEl.ended) {
+            audioEl.play().catch(() => {});
+          } else {
+            audioEl.pause();
+          }
+        });
+
+        // ── Seek on progress-bar click (only after first listen) ──────────
+        progressTrack.addEventListener("click", function (e) {
+          if (!hasListenedOnce || !audioEl.duration) return;
+          const rect = progressTrack.getBoundingClientRect();
+          audioEl.currentTime = ((e.clientX - rect.left) / rect.width) * audioEl.duration;
+          updateProgress();
+        });
+
+        // ── Slider interaction trace ───────────────────────────────────────
+        slider.addEventListener("input", function () {
+          const t = Date.now(), value = parseInt(slider.value, 10);
+          if (t_first_slider_move === null) t_first_slider_move = t;
+          slider_events.push({ t, value });
+          nextBtn.disabled = false;   // enable Next once slider moves
+        });
+
+        // ── Mouse click trace ──────────────────────────────────────────────
         const container = document.getElementById("jspsych-content");
         if (container) {
-          clickListener = function (e) {
+          container._clickTrace = function (e) {
             mouse_clicks.push({
-              t: Date.now(),
-              x: e.clientX,
-              y: e.clientY,
-              target:
-                e.target.tagName +
-                (e.target.id ? "#" + e.target.id : "") +
-                (e.target.className
-                  ? "." + String(e.target.className).trim().split(/\s+/).join(".")
-                  : ""),
+              t: Date.now(), x: e.clientX, y: e.clientY,
+              target: e.target.tagName + (e.target.id ? "#" + e.target.id : ""),
             });
           };
-          container.addEventListener("click", clickListener);
+          container.addEventListener("click", container._clickTrace);
         }
       },
 
       on_finish: function (data) {
-        // ── Remove listeners ─────────────────────────────────────────────────
-        const slider = document.getElementById("jspsych-audio-slider-response-slider");
-        if (slider && sliderInputListener) {
-          slider.removeEventListener("input", sliderInputListener);
-        }
-        if (sliderObserver) {
-          sliderObserver.disconnect();
-          sliderObserver = null;
-        }
+        if (audioEl) { audioEl.pause(); audioEl.src = ""; }
+        if (rafId)   { cancelAnimationFrame(rafId); rafId = null; }
         const container = document.getElementById("jspsych-content");
-        if (container && clickListener) {
-          container.removeEventListener("click", clickListener);
+        if (container && container._clickTrace) {
+          container.removeEventListener("click", container._clickTrace);
+          delete container._clickTrace;
         }
+        const slider = document.getElementById("valence-slider");
 
-        // ── Attach custom fields to trial data ───────────────────────────────
-        data.stim_id = stim.id;
-        data.stim_file = stim.file;
-        data.stim_group = stim.group || "";
-        data.block_type = blockType;
-        data.participant_id = participant_id;
-        data.access_code = access_code;
-        data.t_trial_start = t_trial_start;
-        data.t_audio_start = t_audio_start;
-        data.t_audio_end = t_audio_end;
+        data.response            = slider ? parseInt(slider.value, 10) : null;
+        data.stim_id             = stim.id;
+        data.stim_file           = stim.file;
+        data.stim_group          = stim.group || "";
+        data.block_type          = blockType;
+        data.participant_id      = participant_id;
+        data.access_code         = access_code;
+        data.t_trial_start       = t_trial_start;
+        data.t_audio_start       = t_audio_start;
+        data.t_audio_end         = t_audio_end;
         data.t_first_slider_move = t_first_slider_move;
-        data.slider_events = slider_events;
-        data.mouse_clicks = mouse_clicks;
-        data.audio_played_full = t_audio_end !== null;
-
-        if (t_audio_end && t_audio_start) {
-          const dur = (t_audio_end - t_audio_start) / 1000;
-          console.log(`[${stim.id}] approx. audio duration: ${dur.toFixed(1)}s`);
-        }
+        data.slider_events       = slider_events;
+        data.mouse_clicks        = mouse_clicks;
+        data.audio_played_full   = t_audio_end !== null;
       },
     };
   }
@@ -352,40 +451,38 @@ async function init() {
   // SCREENS 7–8 – Practice Trials
   // ==========================================================================
 
+  // Practice: only include if stimuli.json has entries tagged group="practice"
   const practiceStimuli = stimuli.filter((s) => s.group === "practice").slice(0, 2);
-  // If no practice-tagged stimuli, fall back to first 1
-  const practiceStimToUse =
-    practiceStimuli.length > 0 ? practiceStimuli : stimuli.slice(0, 1);
+  const hasPractice     = practiceStimuli.length > 0;
 
   const practiceIntro = {
     type: jsPsychHtmlButtonResponse,
     stimulus: `
       <div class="instructions-container">
         <h2>Practice</h2>
-        <p>You will now hear <strong>${practiceStimToUse.length} short practice excerpt(s)</strong>
+        <p>You will now hear <strong>${practiceStimuli.length} short practice excerpt(s)</strong>
            to familiarize yourself with the interface before the main session begins.</p>
         <p>Remember:</p>
         <ul>
           <li>The slider will be <strong>disabled during playback</strong>.</li>
           <li>After the excerpt ends, <strong>move the slider</strong> to indicate your rating.</li>
-          <li>Click <strong>Continue</strong> only after you have moved the slider.</li>
+          <li>Click <strong>Next</strong> only after you have moved the slider.</li>
         </ul>
       </div>`,
     choices: ["Start Practice"],
   };
 
-  const practiceTrials = practiceStimToUse.map((s) => buildRatingTrial(s, "practice"));
+  const practiceTrials = practiceStimuli.map((s) => buildRatingTrial(s, "practice"));
 
-  const mainStimuli = stimuli.filter((s) => s.group !== "practice");
-  const mainCount = mainStimuli.length > 0 ? mainStimuli.length : stimuli.length;
-
+  // Main block: everything not tagged as practice
+  const mainStimuli  = stimuli.filter((s) => s.group !== "practice");
   const practiceEnd = {
     type: jsPsychHtmlButtonResponse,
     stimulus: `
       <div class="instructions-container">
         <h2>Practice Complete</h2>
         <p>Great! You are ready to begin the main session.</p>
-        <p>The main session consists of <strong>${mainCount} excerpts</strong>.
+        <p>The main session consists of <strong>${mainStimuli.length} excerpts</strong>.
            Please continue to rate each one as you did in practice.</p>
       </div>`,
     choices: ["Begin Main Study"],
@@ -395,37 +492,37 @@ async function init() {
   // MAIN RATING BLOCK
   // ==========================================================================
 
-  const shuffled = jsPsych.randomization.shuffle(
-    mainStimuli.length > 0 ? mainStimuli : stimuli
-  );
+  const shuffled   = jsPsych.randomization.shuffle(mainStimuli);
   const mainTrials = shuffled.map((s) => buildRatingTrial(s, "main"));
 
   // ==========================================================================
   // DEBRIEF
   // ==========================================================================
 
+  let _debriefComments = "";
   const debriefTrial = {
-    type: jsPsychSurveyText,
-    preamble: `
+    type: jsPsychHtmlButtonResponse,
+    stimulus: `
       <div class="debrief-container">
         <h2>Thank You!</h2>
         <p>You have completed all the musical excerpts. Thank you for participating in this study.</p>
         <p>Your responses will help us better understand how people perceive emotion in
            computer-generated music.</p>
+        <label for="debrief-input">
+          Is there anything you would like to share about your experience? (optional)
+        </label>
+        <textarea id="debrief-input" rows="4"
+                  placeholder="Any comments…"></textarea>
       </div>`,
-    questions: [
-      {
-        prompt: "Is there anything you would like to share about your experience in this study? (optional)",
-        name: "debrief_comments",
-        rows: 4,
-        required: false,
-      },
-    ],
-    button_label: "Submit",
-    on_finish: function (data) {
-      jsPsych.data.addProperties({
-        debrief_comments: data.response.debrief_comments || "",
-      });
+    choices: ["Submit"],
+    on_load: function () {
+      const el = document.getElementById("debrief-input");
+      if (el) el.addEventListener("input", () => { _debriefComments = el.value.trim(); });
+    },
+    on_finish: function () {
+      const el = document.getElementById("debrief-input");
+      if (el) _debriefComments = el.value.trim();
+      jsPsych.data.addProperties({ debrief_comments: _debriefComments });
     },
   };
 
@@ -440,9 +537,7 @@ async function init() {
     ageTrial,
     questionnaireTrial,
     valenceConcept,
-    practiceIntro,
-    ...practiceTrials,
-    practiceEnd,
+    ...(hasPractice ? [practiceIntro, ...practiceTrials, practiceEnd] : []),
     ...mainTrials,
     debriefTrial,
   ];
@@ -452,7 +547,11 @@ async function init() {
 
 // ============================================================================
 // submitData() – POST all trial data to Google Apps Script
+//   • When SCRIPT_URL is still the placeholder, runs in mock mode:
+//     logs the payload to the console and shows a success screen.
 // ============================================================================
+
+const IS_MOCK = SCRIPT_URL.startsWith("REPLACE_WITH");
 
 async function submitData(jsPsych) {
   const display = document.getElementById("jspsych-content") || document.body;
@@ -461,11 +560,9 @@ async function submitData(jsPsych) {
       <p>Submitting your responses, please wait…</p>
     </div>`;
 
-  // Collect rating trials only for submission (surveys are included via jsPsych
-  // global properties on each rating trial, so the schema stays consistent).
   const allTrials = jsPsych.data.get().values();
   const ratingTrials = allTrials.filter(
-    (t) => t.trial_type === "audio-slider-response"
+    (t) => t.block_type === "practice" || t.block_type === "main"
   );
 
   const payload = {
@@ -473,6 +570,23 @@ async function submitData(jsPsych) {
     participant_id: participant_id,
     trials: ratingTrials,
   };
+
+  // ── Mock mode (local dev) ────────────────────────────────────────────────
+  if (IS_MOCK) {
+    console.log("=== MOCK SUBMIT (SCRIPT_URL not set) ===");
+    console.log("Participant ID :", participant_id);
+    console.log("Access code    :", access_code || "(none)");
+    console.log("Trials         :", ratingTrials.length);
+    console.log("Full payload   :", payload);
+    display.innerHTML = `
+      <div class="status-message">
+        <h2>Mock Submission Complete</h2>
+        <p>Running in <strong>local dev mode</strong> — no data was sent to a server.</p>
+        <p>Open the browser console to inspect the full payload.</p>
+        <p style="font-size:0.85rem;color:#666">Participant ID: ${participant_id}</p>
+      </div>`;
+    return;
+  }
 
   try {
     // NOTE: Using text/plain avoids CORS pre-flight OPTIONS request.
