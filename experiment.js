@@ -242,18 +242,19 @@ async function init() {
   // ==========================================================================
 
   function buildRatingTrial(stim, blockType) {
-    let t_trial_start    = null;
-    let t_audio_start    = null;
-    let t_audio_end      = null;
+    let t_trial_start       = null;
+    let t_audio_start       = null;
+    let t_audio_end         = null;
     let t_first_slider_move = null;
-    let slider_events    = [];
-    let mouse_clicks     = [];
-    let audioEl          = null;
-    let rafId            = null;
+    let slider_events       = [];
+    let mouse_clicks        = [];
+    let audioEl             = null;
+    let rafId               = null;
+    let audioCtx            = null;
+    let analyser            = null;
 
     return {
       type: jsPsychHtmlButtonResponse,
-      // Disable the Next button via HTML attribute from the start
       button_html: '<button class="jspsych-btn" id="next-btn" disabled>%choice%</button>',
       choices: ["Next"],
 
@@ -262,19 +263,15 @@ async function init() {
           <p class="trial-prompt">
             Please rate how pleasant or unpleasant the emotion evoked by this music feels to you.
           </p>
-
           <p class="listen-status" id="listen-status">
             Listen to the excerpt before rating.
           </p>
 
           <!-- ── Audio player ── -->
           <div class="audio-player">
-            <button class="play-pause-btn" id="play-pause-btn" disabled title="Loading…">
-              ▶
-            </button>
-            <div class="progress-track" id="progress-track">
-              <div class="progress-fill"   id="progress-fill"></div>
-              <div class="progress-cursor" id="progress-cursor"></div>
+            <button class="play-pause-btn" id="play-pause-btn" disabled title="Loading…">▶</button>
+            <div class="viz-container" id="viz-container">
+              <canvas id="viz-canvas"></canvas>
             </div>
             <span class="time-display" id="time-display">0:00 / 0:00</span>
           </div>
@@ -284,7 +281,7 @@ async function init() {
             <p class="slider-hint" id="slider-hint">
               Rating available after you listen to the full excerpt.
             </p>
-            <div class="slider-wrapper" id="slider-wrapper">
+            <div class="slider-wrapper">
               <input type="range" id="valence-slider"
                      min="0" max="100" value="50" step="1" disabled />
               <div class="slider-labels">
@@ -307,30 +304,102 @@ async function init() {
 
       on_load: function () {
         const playBtn      = document.getElementById("play-pause-btn");
-        const progressFill = document.getElementById("progress-fill");
-        const progCursor   = document.getElementById("progress-cursor");
         const timeDisplay  = document.getElementById("time-display");
         const slider       = document.getElementById("valence-slider");
         const sliderHint   = document.getElementById("slider-hint");
         const listenStatus = document.getElementById("listen-status");
         const nextBtn      = document.getElementById("next-btn");
-        const progressTrack = document.getElementById("progress-track");
+        const canvas       = document.getElementById("viz-canvas");
+        const vizContainer = document.getElementById("viz-container");
+        const ctx2d        = canvas.getContext("2d");
 
         let hasListenedOnce = false;
+        let freqData        = null;
+
+        // ── DPI-aware canvas resize ────────────────────────────────────────
+        function resizeCanvas() {
+          const dpr  = window.devicePixelRatio || 1;
+          const rect = vizContainer.getBoundingClientRect();
+          canvas.width  = rect.width  * dpr;
+          canvas.height = rect.height * dpr;
+          ctx2d.scale(dpr, dpr);
+          canvas._cssW = rect.width;
+          canvas._cssH = rect.height;
+        }
+        resizeCanvas();
 
         function fmt(s) {
           const m = Math.floor(s / 60);
           return m + ":" + String(Math.floor(s % 60)).padStart(2, "0");
         }
 
-        function updateProgress() {
-          if (!audioEl || !audioEl.duration) return;
-          const pct = audioEl.currentTime / audioEl.duration;
-          progressFill.style.width       = (pct * 100) + "%";
-          progCursor.style.left          = (pct * 100) + "%";
-          timeDisplay.textContent        = fmt(audioEl.currentTime) + " / " + fmt(audioEl.duration);
-          if (!audioEl.paused && !audioEl.ended) {
-            rafId = requestAnimationFrame(updateProgress);
+        // ── Read CSS vars so bars respect dark/light theme ────────────────
+        function cssVar(name) {
+          return getComputedStyle(document.documentElement)
+            .getPropertyValue(name).trim();
+        }
+
+        // ── Draw loop: frequency bars + playhead ───────────────────────────
+        function draw() {
+          rafId = requestAnimationFrame(draw);
+          const W = canvas._cssW || canvas.width;
+          const H = canvas._cssH || canvas.height;
+
+          ctx2d.clearRect(0, 0, W, H);
+
+          // Frequency bars
+          if (analyser && freqData && !audioEl.paused && !audioEl.ended) {
+            analyser.getByteFrequencyData(freqData);
+          }
+
+          const NUM_BARS = 52;
+          const gap      = 2;
+          const barW     = (W - gap * (NUM_BARS - 1)) / NUM_BARS;
+          const isPlaying = analyser && freqData && !audioEl.paused && !audioEl.ended;
+
+          for (let i = 0; i < NUM_BARS; i++) {
+            let v = 0;
+            if (isPlaying) {
+              const bin = Math.floor(i * (freqData.length * 0.6) / NUM_BARS);
+              v = freqData[bin] / 255;
+            }
+            const bH = Math.max(2, v * H * 0.85);
+            const x  = i * (barW + gap);
+            const y  = (H - bH) / 2;
+
+            // Interpolate between bar-lo and bar-hi based on energy
+            const grad = ctx2d.createLinearGradient(x, y + bH, x, y);
+            grad.addColorStop(0, cssVar("--bar-lo"));
+            grad.addColorStop(1, cssVar("--bar-hi"));
+            ctx2d.fillStyle = v > 0 ? grad : cssVar("--bar-idle");
+            ctx2d.beginPath();
+            ctx2d.roundRect(x, y, barW, bH, 2);
+            ctx2d.fill();
+          }
+
+          // Idle centre line when paused / ended
+          if (!isPlaying) {
+            ctx2d.strokeStyle = cssVar("--bar-idle");
+            ctx2d.lineWidth   = 1;
+            ctx2d.beginPath();
+            ctx2d.moveTo(0, H / 2);
+            ctx2d.lineTo(W, H / 2);
+            ctx2d.stroke();
+          }
+
+          // Playhead
+          if (audioEl.duration) {
+            const pct = audioEl.currentTime / audioEl.duration;
+            const px  = pct * W;
+            ctx2d.strokeStyle = cssVar("--playhead");
+            ctx2d.lineWidth   = 2;
+            ctx2d.beginPath();
+            ctx2d.moveTo(px, 0);
+            ctx2d.lineTo(px, H);
+            ctx2d.stroke();
+
+            timeDisplay.textContent =
+              fmt(audioEl.currentTime) + " / " + fmt(audioEl.duration);
           }
         }
 
@@ -341,40 +410,49 @@ async function init() {
           playBtn.disabled        = false;
           playBtn.title           = "Play";
           timeDisplay.textContent = "0:00 / " + fmt(audioEl.duration);
+          rafId = requestAnimationFrame(draw);   // start idle draw loop
         }, { once: true });
 
         audioEl.addEventListener("error", function () {
           listenStatus.textContent = "⚠ Audio failed to load: " + stim.file;
-          listenStatus.style.color = "#c0392b";
+          listenStatus.style.color = "var(--danger)";
         });
 
         audioEl.addEventListener("play", function () {
           playBtn.textContent = "⏸";
           playBtn.title       = "Pause";
           if (!t_audio_start) t_audio_start = Date.now();
-          rafId = requestAnimationFrame(updateProgress);
+
+          // ── Wire up Web Audio API on first play (requires user gesture) ──
+          if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize        = 256;   // 128 bins
+            analyser.smoothingTimeConstant = 0.78;
+            const source = audioCtx.createMediaElementSource(audioEl);
+            source.connect(analyser);
+            analyser.connect(audioCtx.destination);
+            freqData = new Uint8Array(analyser.frequencyBinCount);
+          }
+          if (audioCtx.state === "suspended") audioCtx.resume();
         });
 
         audioEl.addEventListener("pause", function () {
           playBtn.textContent = "▶";
           playBtn.title       = hasListenedOnce ? "Play" : "Resume";
-          if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-          updateProgress();
         });
 
         audioEl.addEventListener("ended", function () {
           playBtn.textContent = "↻";
           playBtn.title       = "Play again";
-          if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-          updateProgress();
 
           if (!hasListenedOnce) {
-            hasListenedOnce       = true;
-            t_audio_end           = Date.now();
-            // Unlock slider + seeking
-            slider.disabled          = false;
-            progressTrack.classList.add("seekable");
-            sliderHint.textContent   = "Move the slider to indicate your rating, then click Next.";
+            hasListenedOnce = true;
+            t_audio_end     = Date.now();
+
+            slider.disabled        = false;
+            vizContainer.classList.add("seekable");
+            sliderHint.textContent = "Move the slider to indicate your rating, then click Next.";
             sliderHint.classList.add("hint-active");
             listenStatus.textContent = "✓ Now rate the excerpt and click Next.";
             listenStatus.classList.add("status-ready");
@@ -390,12 +468,11 @@ async function init() {
           }
         });
 
-        // ── Seek on progress-bar click (only after first listen) ──────────
-        progressTrack.addEventListener("click", function (e) {
+        // ── Seek by clicking the visualizer (after first listen) ──────────
+        vizContainer.addEventListener("click", function (e) {
           if (!hasListenedOnce || !audioEl.duration) return;
-          const rect = progressTrack.getBoundingClientRect();
+          const rect = vizContainer.getBoundingClientRect();
           audioEl.currentTime = ((e.clientX - rect.left) / rect.width) * audioEl.duration;
-          updateProgress();
         });
 
         // ── Slider interaction trace ───────────────────────────────────────
@@ -403,7 +480,7 @@ async function init() {
           const t = Date.now(), value = parseInt(slider.value, 10);
           if (t_first_slider_move === null) t_first_slider_move = t;
           slider_events.push({ t, value });
-          nextBtn.disabled = false;   // enable Next once slider moves
+          nextBtn.disabled = false;
         });
 
         // ── Mouse click trace ──────────────────────────────────────────────
@@ -420,8 +497,9 @@ async function init() {
       },
 
       on_finish: function (data) {
-        if (audioEl) { audioEl.pause(); audioEl.src = ""; }
-        if (rafId)   { cancelAnimationFrame(rafId); rafId = null; }
+        if (audioEl)  { audioEl.pause(); audioEl.src = ""; }
+        if (rafId)    { cancelAnimationFrame(rafId); rafId = null; }
+        if (audioCtx) { audioCtx.close(); audioCtx = null; }
         const container = document.getElementById("jspsych-content");
         if (container && container._clickTrace) {
           container.removeEventListener("click", container._clickTrace);

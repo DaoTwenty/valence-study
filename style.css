@@ -1,20 +1,46 @@
-/* ── Design tokens ──────────────────────────────────────────────────────── */
+/* ── Design tokens – dark (default) ────────────────────────────────────── */
 :root {
-  --bg:          #0f1117;
-  --surface:     #1a1d27;
-  --surface-2:   #22263a;
-  --border:      rgba(255,255,255,0.07);
-  --accent:      #6c8ef5;
-  --accent-dim:  #3a4f9a;
-  --text:        #e8eaf0;
-  --text-muted:  #7a7f96;
-  --text-faint:  #3f4460;
-  --success:     #4db87a;
-  --danger:      #e05c5c;
-  --radius:      12px;
-  --radius-sm:   7px;
-  --font:        'Inter', 'Segoe UI', system-ui, sans-serif;
-  --mono:        'JetBrains Mono', 'Fira Code', monospace;
+  --bg:         #0f1117;
+  --surface:    #1a1d27;
+  --surface-2:  #22263a;
+  --border:     rgba(255,255,255,0.07);
+  --accent:     #6c8ef5;
+  --accent-dim: #3a4f9a;
+  --text:       #e8eaf0;
+  --text-muted: #7a7f96;
+  --text-faint: #3f4460;
+  --success:    #4db87a;
+  --danger:     #e05c5c;
+  --radius:     12px;
+  --radius-sm:  7px;
+  --font:       'Inter', 'Segoe UI', system-ui, sans-serif;
+  --mono:       'JetBrains Mono', 'Fira Code', monospace;
+
+  /* viz bar colours (dark) */
+  --bar-lo:  rgba(58, 79, 154, 0.6);
+  --bar-hi:  rgba(108, 142, 245, 1);
+  --bar-idle: rgba(108, 142, 245, 0.18);
+  --playhead: rgba(255,255,255,0.7);
+}
+
+/* ── Light mode overrides ───────────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg:         #f0f2fa;
+  --surface:    #ffffff;
+  --surface-2:  #e8ecf8;
+  --border:     rgba(0,0,0,0.08);
+  --accent:     #4a6ee0;
+  --accent-dim: #8aaaf8;
+  --text:       #1a1d2e;
+  --text-muted: #515778;
+  --text-faint: #a0a8cc;
+  --success:    #2d9e5f;
+  --danger:     #cc3333;
+
+  --bar-lo:   rgba(138, 170, 248, 0.5);
+  --bar-hi:   rgba(74, 110, 224, 1);
+  --bar-idle: rgba(74, 110, 224, 0.15);
+  --playhead: rgba(30, 40, 80, 0.6);
 }
 
 /* ── Base ───────────────────────────────────────────────────────────────── */
@@ -30,12 +56,37 @@ body {
   font-family: var(--font);
   font-size: 16px;
   line-height: 1.6;
+  transition: background 0.25s, color 0.25s;
+}
+
+/* ── Theme toggle button ────────────────────────────────────────────────── */
+#theme-toggle {
+  position: fixed;
+  top: 18px;
+  right: 20px;
+  z-index: 9999;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+#theme-toggle:hover {
+  color: var(--accent);
+  transform: scale(1.1);
 }
 
 /* ── jsPsych container ──────────────────────────────────────────────────── */
-.jspsych-display-element {
-  background: var(--bg) !important;
-}
+.jspsych-display-element { background: var(--bg) !important; }
 
 #jspsych-content {
   padding: 56px 24px !important;
@@ -59,7 +110,8 @@ body {
   max-width: 680px;
   width: 100%;
   text-align: left;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+  transition: background 0.25s, border-color 0.25s;
 }
 
 h2 {
@@ -69,7 +121,6 @@ h2 {
   letter-spacing: -0.01em;
   color: var(--text);
 }
-
 p  { color: var(--text-muted); margin: 0 0 12px; }
 ul { color: var(--text-muted); padding-left: 20px; }
 li { margin-bottom: 8px; }
@@ -97,8 +148,8 @@ label {
   width: 100%;
   max-width: 400px;
   margin-top: 4px;
-  transition: border-color 0.15s;
   outline: none;
+  transition: border-color 0.15s, background 0.25s;
 }
 #age-input     { max-width: 110px; }
 #debrief-input { resize: vertical; max-width: 100%; }
@@ -142,15 +193,9 @@ label {
 
 /* ── Survey multi-choice overrides ─────────────────────────────────────── */
 .jspsych-survey-multi-choice-preamble,
-.jspsych-survey-multi-choice-question-prompt {
-  color: var(--text-muted) !important;
-}
-.jspsych-survey-multi-choice-option label {
-  color: var(--text) !important;
-}
-.jspsych-survey-multi-choice-option input[type="radio"] {
-  accent-color: var(--accent);
-}
+.jspsych-survey-multi-choice-question-prompt { color: var(--text-muted) !important; }
+.jspsych-survey-multi-choice-option label    { color: var(--text) !important; }
+.jspsych-survey-multi-choice-option input[type="radio"] { accent-color: var(--accent); }
 
 /* ── Rating trial ───────────────────────────────────────────────────────── */
 .rating-trial {
@@ -163,21 +208,18 @@ label {
   font-size: 1rem;
   color: var(--text-muted);
   margin: 0 0 6px;
-  font-weight: 400;
 }
 
 .listen-status {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: var(--text-faint);
-  margin: 0 0 24px;
-  letter-spacing: 0.04em;
+  margin: 0 0 22px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   min-height: 1.4em;
   transition: color 0.4s;
 }
-.listen-status.status-ready {
-  color: var(--success);
-}
+.listen-status.status-ready { color: var(--success); }
 
 /* ── Audio player card ──────────────────────────────────────────────────── */
 .audio-player {
@@ -189,7 +231,8 @@ label {
   border-radius: var(--radius);
   padding: 16px 20px;
   margin-bottom: 28px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+  transition: background 0.25s, border-color 0.25s;
 }
 
 /* Play / pause / replay button */
@@ -202,7 +245,6 @@ label {
   background: transparent;
   color: var(--accent);
   font-size: 1.1rem;
-  line-height: 1;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -220,39 +262,21 @@ label {
   cursor: not-allowed;
 }
 
-/* Progress track */
-.progress-track {
+/* ── Visualizer canvas ──────────────────────────────────────────────────── */
+.viz-container {
   flex: 1;
-  height: 6px;
-  background: var(--surface-2);
-  border-radius: 3px;
-  position: relative;
+  height: 64px;
   cursor: default;
-  overflow: visible;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
 }
-.progress-track.seekable { cursor: pointer; }
+.viz-container.seekable { cursor: pointer; }
 
-.progress-fill {
+#viz-canvas {
+  width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, var(--accent-dim), var(--accent));
-  border-radius: 3px;
-  width: 0%;
-  pointer-events: none;
-  transition: none;
-}
-
-.progress-cursor {
-  position: absolute;
-  top: 50%;
-  left: 0%;
-  transform: translate(-50%, -50%);
-  width: 14px;
-  height: 14px;
-  background: var(--accent);
-  border-radius: 50%;
-  border: 2px solid var(--bg);
-  box-shadow: 0 0 0 2px var(--accent);
-  pointer-events: none;
+  display: block;
 }
 
 .time-display {
@@ -265,10 +289,8 @@ label {
   text-align: right;
 }
 
-/* ── Valence slider section ─────────────────────────────────────────────── */
-.slider-section {
-  margin-top: 4px;
-}
+/* ── Valence slider ─────────────────────────────────────────────────────── */
+.slider-section { margin-top: 4px; }
 
 .slider-hint {
   font-size: 0.8rem;
@@ -280,7 +302,6 @@ label {
 }
 .slider-hint.hint-active { color: var(--text-muted); }
 
-/* Grey-out the whole wrapper while disabled */
 .slider-wrapper {
   transition: opacity 0.4s;
 }
@@ -289,19 +310,13 @@ label {
   pointer-events: none;
 }
 
-/* Slider track */
 #valence-slider {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
   height: 6px;
   border-radius: 3px;
-  background: linear-gradient(
-    to right,
-    #e05c5c,
-    #b07ad4 50%,
-    #4db87a
-  );
+  background: linear-gradient(to right, #e05c5c, #b07ad4 50%, #4db87a);
   cursor: pointer;
   outline: none;
 }
@@ -314,20 +329,18 @@ label {
   border-radius: 50%;
   background: var(--text);
   border: 3px solid var(--bg);
-  box-shadow: 0 0 0 2px var(--accent), 0 2px 8px rgba(0,0,0,0.4);
+  box-shadow: 0 0 0 2px var(--accent), 0 2px 8px rgba(0,0,0,0.3);
   cursor: pointer;
   transition: transform 0.1s;
 }
-#valence-slider:not(:disabled)::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-}
+#valence-slider:not(:disabled)::-webkit-slider-thumb:hover { transform: scale(1.15); }
 #valence-slider::-moz-range-thumb {
   width: 20px;
   height: 20px;
   border-radius: 50%;
   background: var(--text);
   border: 3px solid var(--bg);
-  box-shadow: 0 0 0 2px var(--accent), 0 2px 8px rgba(0,0,0,0.4);
+  box-shadow: 0 0 0 2px var(--accent), 0 2px 8px rgba(0,0,0,0.3);
   cursor: pointer;
 }
 
@@ -348,5 +361,5 @@ label {
   font-size: 1rem;
   max-width: 480px;
 }
-.status-message h2 { color: var(--text); }
+.status-message h2  { color: var(--text); }
 .status-message.error { color: var(--danger); }

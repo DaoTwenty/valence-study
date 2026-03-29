@@ -34,6 +34,30 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Dark / light mode toggle (top-right, always visible) -->
+  <button id="theme-toggle" title="Toggle dark/light mode" aria-label="Toggle theme">
+    <span id="theme-icon">☀</span>
+  </button>
+  <script>
+    (function () {
+      const btn  = document.getElementById("theme-toggle");
+      const icon = document.getElementById("theme-icon");
+      const DARK = "dark", LIGHT = "light";
+      let current = localStorage.getItem("theme") || DARK;
+
+      function apply(theme) {
+        document.body.dataset.theme = theme;
+        icon.textContent = theme === DARK ? "☀" : "☾";
+        localStorage.setItem("theme", theme);
+        current = theme;
+      }
+      apply(current);
+      btn.addEventListener("click", function () {
+        apply(current === DARK ? LIGHT : DARK);
+      });
+    })();
+  </script>
+
   <script src="experiment.js"></script>
 </body>
 </html>
