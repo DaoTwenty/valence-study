@@ -87,32 +87,37 @@ const CONTENT = {
     preamble: "Please answer the following questions about your musical experience.",
     questions: [
       {
-        name: "musical_training_years",
-        prompt: "How many years have you played a musical instrument or sung in a " +
-                "structured setting (e.g., lessons, ensembles)?",
-        options: ["None", "1–2 years", "3–5 years", "6–10 years", "10+ years"],
-        required: true,
-      },
-      {
-        name: "formal_music_education",
-        prompt: "Have you received formal education in music theory, composition, or performance?",
+        name: "listening_frequency",
+        prompt: "How often do you listen to music?",
         options: [
-          "No",
-          "Yes, up to high school",
-          "Yes, university/college",
-          "Yes, postgraduate/professional",
+          "Rarely or never",
+          "A few times a week",
+          "Every day",
+          "Several hours per day",
         ],
         required: true,
       },
       {
-        name: "listening_frequency",
-        prompt: "How often do you listen to music?",
+        name: "music_practice_years",
+        prompt: "How many years have you actively practiced music in any form " +
+                "(playing, singing, producing, DJing, composing, etc.)?",
         options: [
-          "Less than once a week",
-          "1–3 days per week",
-          "4–6 days per week",
-          "Every day",
-          "Several hours per day",
+          "I don't practice music",
+          "Less than 2 years",
+          "2–5 years",
+          "6–10 years",
+          "More than 10 years",
+        ],
+        required: true,
+      },
+      {
+        name: "music_engagement",
+        prompt: "Which best describes your current relationship with music?",
+        options: [
+          "I mainly listen",
+          "I make music as a hobby",
+          "I make music semi-professionally",
+          "I make music professionally",
         ],
         required: true,
       },

@@ -76,10 +76,10 @@ function doPost(e) {
         JSON.stringify(t.slider_events || []),
         JSON.stringify(t.mouse_clicks  || []),
         // ── Demographics (same value on every trial row) ───────────────
-        demo.q_musical_training   || "",
-        demo.q_formal_education   || "",
-        demo.q_listening_frequency|| "",
-        demo.debrief_comments     || "",
+        demo.q_listening_frequency  || "",
+        demo.q_music_practice_years || "",
+        demo.q_music_engagement     || "",
+        demo.debrief_comments       || "",
         // ── Full trial object for re-parsing ──────────────────────────
         JSON.stringify(t),
       ]);
@@ -132,8 +132,8 @@ function setupSheets() {
     "t_trial_start", "t_audio_start", "t_audio_end", "t_first_slider_move",
     "audio_played_full", "slider_events_json", "mouse_clicks_json",
     // Demographics
-    "q_musical_training", "q_formal_education",
-    "q_listening_frequency", "debrief_comments",
+    "q_listening_frequency", "q_music_practice_years",
+    "q_music_engagement", "debrief_comments",
     // Raw
     "raw_json",
   ];

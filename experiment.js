@@ -15,9 +15,9 @@ let access_code      = "";
 const participant_id = generateParticipantId();
 
 const demographics = {
-  q_musical_training:   "",
-  q_formal_education:   "",
-  q_listening_frequency:"",
+  q_listening_frequency: "",
+  q_music_practice_years:"",
+  q_music_engagement:    "",
   debrief_comments:     "",
 };
 
@@ -218,13 +218,13 @@ async function init() {
     preamble: `<h2>${C.questionnaire.title}</h2><p>${C.questionnaire.preamble}</p>`,
     questions: C.questionnaire.questions,
     on_finish: function (data) {
-      demographics.q_musical_training    = data.response.musical_training_years   || "";
-      demographics.q_formal_education    = data.response.formal_music_education   || "";
-      demographics.q_listening_frequency = data.response.listening_frequency      || "";
+      demographics.q_listening_frequency  = data.response.listening_frequency   || "";
+      demographics.q_music_practice_years = data.response.music_practice_years  || "";
+      demographics.q_music_engagement     = data.response.music_engagement      || "";
       jsPsych.data.addProperties({
-        q_musical_training:    demographics.q_musical_training,
-        q_formal_education:    demographics.q_formal_education,
-        q_listening_frequency: demographics.q_listening_frequency,
+        q_listening_frequency:  demographics.q_listening_frequency,
+        q_music_practice_years: demographics.q_music_practice_years,
+        q_music_engagement:     demographics.q_music_engagement,
       });
     },
   };
