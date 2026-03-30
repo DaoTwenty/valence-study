@@ -25,7 +25,7 @@ const CONTENT = {
     title: "Participant Information and Consent",
     paragraphs: [
       "<strong>Study Purpose:</strong> This study investigates how people perceive " +
-      "emotions in computer-generated music. We are interested in your personal " +
+      "emotions in music. We are interested in your personal " +
       "emotional responses.",
 
       "<strong>Duration:</strong> Approximately 30 minutes.",
