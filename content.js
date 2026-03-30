@@ -121,6 +121,18 @@ const CONTENT = {
         ],
         required: true,
       },
+      {
+        name: "music_formal_education",
+        prompt: "Have you received any formal education in music " +
+                "(e.g., conservatory, university music program, music theory courses)?",
+        options: [
+          "No formal education in music",
+          "Some coursework (workshops, short courses)",
+          "Completed a music program (diploma, bachelor's, or equivalent)",
+          "Graduate-level music education (master's, doctorate, or equivalent)",
+        ],
+        required: true,
+      },
     ],
   },
 
