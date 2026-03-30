@@ -32,7 +32,7 @@ const CONTENT = {
 
       "<strong>Procedures:</strong> You will listen to a series of short musical excerpts " +
       "(~30 seconds each) and rate the <strong>valence</strong> of each excerpt — " +
-      "how positive or negative the emotion you feel from the music is — using a slider scale.",
+      "how positive or negative the emotion expressed by the music is — using a slider scale.",
 
       "<strong>Voluntary Participation:</strong> Your participation is entirely voluntary. " +
       "You may withdraw at any time without penalty by closing this window.",
@@ -56,12 +56,10 @@ const CONTENT = {
       "Complete this study in a <strong>quiet environment</strong>.",
       "Set your volume to a <strong>comfortable listening level</strong> before starting.",
       // Note: excerpt count is inserted automatically by experiment.js
-      "After each excerpt, rate <strong>how positive or negative the emotion you feel " +
-      "from the music is overall</strong> using a slider.",
-      "This rating is about <strong>your emotional reaction</strong>, not about how much " +
-      "you like or dislike the piece.",
-      "It is normal for two people to feel different emotions from the same music. " +
-      "There are <strong>no right or wrong answers</strong> — please respond based on your own experience.",
+      "After each excerpt, rate <strong>how positive or negative the emotion expressed " +
+      "by the music is</strong> using a slider.",
+      "Focus on <strong>what the music conveys</strong>, not on whether you like or dislike the piece.",
+      "There are <strong>no right or wrong answers</strong> — respond based on your impression of the music.",
       "The slider is <strong>disabled during playback</strong> — it becomes active once " +
       "the excerpt finishes.",
       "You must <strong>move the slider</strong> before you can proceed to the next excerpt.",
@@ -142,20 +140,17 @@ const CONTENT = {
   valenceConcept: {
     title: 'What do we mean by "valence"?',
     paragraphs: [
-      "Emotions can feel more or less <strong>positive or negative</strong>. In this study, " +
-      "we focus on <em>valence</em> — how positive or negative the emotion " +
-      "<strong>you feel from the music</strong> is overall.",
+      "In this study, <strong>valence</strong> refers to how positive or negative the " +
+      "emotion <strong>expressed by the music</strong> is — what the music conveys or communicates, " +
+      "regardless of whether you personally like it.",
     ],
     items: [
-      "<strong>Negative valence:</strong> the music makes you feel tense, disturbed, anxious, " +
-      "or deeply sad in a painful way.",
-      "<strong>Positive valence:</strong> the music makes you feel joyful, peaceful, comforted, " +
-      "or uplifted.",
-      "You might sometimes feel a positive emotion from music you do not particularly like, " +
-      "or a negative emotion from music you do like — and that is perfectly fine.",
+      "<strong>Negative valence:</strong> the music sounds tense, dark, anxious, sorrowful, or unsettling.",
+      "<strong>Positive valence:</strong> the music sounds joyful, bright, peaceful, uplifting, or warm.",
+      "Two pieces can be equally intense but differ in valence — e.g. an energetic but dark track " +
+      "vs. an energetic and euphoric one.",
     ],
-    footer: "Please focus on <strong>your own emotional state</strong> while listening, " +
-            "not on whether you enjoy the piece or consider it good music. " +
+    footer: "Focus on <strong>what the music expresses</strong>, not on your personal taste. " +
             "There are no right or wrong answers.",
     buttonLabel: "I understand, let's begin the practice",
   },
@@ -185,7 +180,7 @@ const CONTENT = {
   // Rating trial
   // --------------------------------------------------------------------------
   trial: {
-    prompt:      "How positive or negative is the emotion you feel from this music overall?",
+    prompt:      "How positive or negative is the emotion expressed by this music?",
     listenFirst: "Listen to the excerpt before rating.",
     rateNow:     "✓ Now rate the excerpt and click Next.",
     sliderLocked: "Rating available after you listen to the full excerpt.",
