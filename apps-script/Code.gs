@@ -165,7 +165,7 @@ function setupSheets() {
     ]);
   }
 
-  SpreadsheetApp.getUi().alert("Setup complete.");
+  Logger.log("Setup complete.");
 }
 
 // ---------------------------------------------------------------------------
@@ -174,4 +174,45 @@ function setupSheets() {
 function addCodes(codeRows) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Codes");
   sheet.getRange(sheet.getLastRow() + 1, 1, codeRows.length, 3).setValues(codeRows);
+}
+
+// ---------------------------------------------------------------------------
+// reorganizeColumns – run once after header changes to realign existing data
+// Works on both ValidData and UnverifiedData.
+// It reads the CURRENT row 1 as the desired column order, then remaps all
+// data rows to match. Old columns not in the new headers are dropped.
+// Missing columns are filled with "".
+// ---------------------------------------------------------------------------
+function reorganizeColumns() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  ["ValidData", "UnverifiedData"].forEach(function (name) {
+    var sheet = ss.getSheetByName(name);
+    if (!sheet || sheet.getLastRow() < 2) return;
+
+    var allData    = sheet.getDataRange().getValues();
+    var oldHeaders = allData[0];                      // row 1 as it was before you ran setupSheets
+    var newHeaders = allData[0];                      // after setupSheets row 1 is already the new headers
+
+    // Build old-header → column-index map
+    var oldIdx = {};
+    oldHeaders.forEach(function (h, i) { oldIdx[h] = i; });
+
+    // Remap every data row to new header order
+    var newRows = allData.slice(1).map(function (row) {
+      return newHeaders.map(function (h) {
+        return oldIdx[h] !== undefined ? row[oldIdx[h]] : "";
+      });
+    });
+
+    // Overwrite data rows (leave header row as-is)
+    if (newRows.length > 0) {
+      sheet.getRange(2, 1, newRows.length, newHeaders.length).setValues(newRows);
+      // Clear any extra columns to the right if old sheet was wider
+      if (oldHeaders.length > newHeaders.length) {
+        sheet.getRange(2, newHeaders.length + 1, newRows.length, oldHeaders.length - newHeaders.length).clearContent();
+      }
+    }
+    Logger.log(name + ": remapped " + newRows.length + " rows.");
+  });
+  Logger.log("Column reorganization complete.");
 }
