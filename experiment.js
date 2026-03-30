@@ -3,24 +3,120 @@
 // ============================================================================
 
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhM3uZM_R9dHbC-XQs2TCNjV7JHIYPRiR4ajc68hL5gq6_CB_dFE1vjnlLyIFjTq8d/exec";
+const BACKUP_PREFIX = "valence_backup_";
 
-// ── Session globals ──────────────────────────────────────────────────────────
+// ── Session globals ───────────────────────────────────────────────────────────
 
 function generateParticipantId() {
   return "P_" + Math.random().toString(36).slice(2, 11).toUpperCase();
 }
 
-let access_code    = "";
+let access_code      = "";
 const participant_id = generateParticipantId();
 
-// Collected as participants complete each screen; sent once at the end.
 const demographics = {
-  q_age:               "",
-  q_musical_training:  "",
-  q_formal_education:  "",
-  q_listening_frequency: "",
-  debrief_comments:    "",
+  q_age:                "",
+  q_musical_training:   "",
+  q_formal_education:   "",
+  q_listening_frequency:"",
+  debrief_comments:     "",
 };
+
+// ============================================================================
+// Headphone check helpers
+// ============================================================================
+
+function playTone(pan) {
+  const AudioCtx = window.AudioContext || /** @type {any} */ (window).webkitAudioContext;
+  const ctx = new AudioCtx();
+  try {
+    const osc    = ctx.createOscillator();
+    const panner = ctx.createStereoPanner();
+    const gain   = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = 200;
+    panner.pan.value    = pan;
+    gain.gain.value     = 0.35;
+    gain.gain.setTargetAtTime(0, ctx.currentTime + 1.2, 0.15);
+    osc.connect(panner);
+    panner.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 1.6);
+  } catch (e) {
+    console.warn("Tone error:", e);
+  }
+  return ctx;
+}
+
+function buildHeadphoneCheckBlock(_jsPsych) {
+  const C = CONTENT;
+  // pan: -1 = left (correct index 0), +1 = right (correct index 1)
+  const checks = [{ pan: -1 }, { pan: 1 }, { pan: -1 }];
+  let passed = 0;
+
+  const checkTrials = checks.map(function (check, idx) {
+    let toneCtx = null;
+
+    return {
+      type: jsPsychHtmlButtonResponse,
+      stimulus: `
+        <div class="headphone-check">
+          <h2>${C.headphoneCheck.title} <span class="check-counter">${idx + 1} / ${checks.length}</span></h2>
+          <p>${C.headphoneCheck.instruction}</p>
+          <button class="tone-btn" id="hp-play-btn">${C.headphoneCheck.playLabel}</button>
+          <p class="hp-question" id="hp-question">${C.headphoneCheck.question}</p>
+        </div>`,
+      choices: C.headphoneCheck.choices,
+      // Start with answer buttons disabled; enable after tone
+      button_html: '<button class="jspsych-btn hp-choice" disabled>%choice%</button>',
+      on_load: function () {
+        const playBtn    = document.getElementById("hp-play-btn");
+        const choiceBtns = document.querySelectorAll(".hp-choice");
+
+        playBtn.addEventListener("click", function () {
+          if (toneCtx) { toneCtx.close(); toneCtx = null; }
+          playBtn.disabled    = true;
+          playBtn.textContent = C.headphoneCheck.playingLabel;
+          tonePlayed          = true;
+          toneCtx = playTone(check.pan);
+
+          setTimeout(function () {
+            playBtn.disabled    = false;
+            playBtn.textContent = C.headphoneCheck.replayLabel;
+            document.getElementById("hp-question").classList.add("hp-question-visible");
+            choiceBtns.forEach(function (btn) { btn.disabled = false; });
+          }, 1700);
+        });
+      },
+      on_finish: function (data) {
+        if (toneCtx) { toneCtx.close(); toneCtx = null; }
+        const correctIndex = check.pan < 0 ? 0 : 1;
+        data.block_type    = "headphone_check";
+        data.hp_pan        = check.pan;
+        data.hp_correct    = data.response === correctIndex;
+        if (data.hp_correct) passed++;
+      },
+    };
+  });
+
+  const resultTrial = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: function () {
+      const ok = passed >= 2;
+      return `
+        <div class="headphone-check">
+          <h2>${C.headphoneCheck.title}</h2>
+          <p class="${ok ? "hp-pass" : "hp-fail"}">
+            ${ok ? C.headphoneCheck.resultPass : C.headphoneCheck.resultFail}
+          </p>
+        </div>`;
+    },
+    choices: [C.headphoneCheck.buttonLabel],
+  };
+
+  return [...checkTrials, resultTrial];
+}
 
 // ============================================================================
 // init()
@@ -53,7 +149,7 @@ async function init() {
   });
   jsPsych.data.addProperties({ participant_id, access_code });
 
-  const C = CONTENT; // shorthand
+  const C = CONTENT;
 
   // ==========================================================================
   // SCREEN 1 – Access Code
@@ -147,9 +243,9 @@ async function init() {
     preamble: `<h2>${C.questionnaire.title}</h2><p>${C.questionnaire.preamble}</p>`,
     questions: C.questionnaire.questions,
     on_finish: function (data) {
-      demographics.q_musical_training   = data.response.musical_training_years  || "";
-      demographics.q_formal_education   = data.response.formal_music_education  || "";
-      demographics.q_listening_frequency = data.response.listening_frequency    || "";
+      demographics.q_musical_training    = data.response.musical_training_years   || "";
+      demographics.q_formal_education    = data.response.formal_music_education   || "";
+      demographics.q_listening_frequency = data.response.listening_frequency      || "";
       jsPsych.data.addProperties({
         q_musical_training:    demographics.q_musical_training,
         q_formal_education:    demographics.q_formal_education,
@@ -175,10 +271,16 @@ async function init() {
   };
 
   // ==========================================================================
+  // SCREEN 7 – Headphone Check
+  // ==========================================================================
+
+  const headphoneCheckTrials = buildHeadphoneCheckBlock(jsPsych);
+
+  // ==========================================================================
   // Rating trial factory
   // ==========================================================================
 
-  function buildRatingTrial(stim, blockType) {
+  function buildRatingTrial(stim, blockType, trialNum, totalTrials) {
     let t_trial_start       = null;
     let t_audio_start       = null;
     let t_audio_end         = null;
@@ -191,6 +293,9 @@ async function init() {
     let analyser            = null;
     let sliderValue         = 50;
 
+    const progressPct = totalTrials > 0 ? Math.round((trialNum / totalTrials) * 100) : 0;
+    const isMain      = blockType === "main";
+
     return {
       type: jsPsychHtmlButtonResponse,
       button_html: '<button class="jspsych-btn" id="next-btn" disabled>%choice%</button>',
@@ -198,6 +303,13 @@ async function init() {
 
       stimulus: `
         <div class="rating-trial">
+          ${isMain ? `
+          <div class="trial-progress">
+            <div class="trial-progress-fill" style="width:${progressPct}%"></div>
+          </div>
+          <p class="trial-counter">${trialNum} / ${totalTrials}</p>
+          ` : `<p class="trial-counter practice-label">Practice</p>`}
+
           <p class="trial-prompt">${C.trial.prompt}</p>
           <p class="listen-status" id="listen-status">${C.trial.listenFirst}</p>
 
@@ -231,15 +343,15 @@ async function init() {
       },
 
       on_load: function () {
-        const playBtn       = document.getElementById("play-pause-btn");
-        const timeDisplay   = document.getElementById("time-display");
-        const slider        = document.getElementById("valence-slider");
-        const sliderHint    = document.getElementById("slider-hint");
-        const listenStatus  = document.getElementById("listen-status");
-        const nextBtn       = document.getElementById("next-btn");
-        const canvas        = document.getElementById("viz-canvas");
-        const vizContainer  = document.getElementById("viz-container");
-        const ctx2d         = canvas.getContext("2d");
+        const playBtn      = document.getElementById("play-pause-btn");
+        const timeDisplay  = document.getElementById("time-display");
+        const slider       = document.getElementById("valence-slider");
+        const sliderHint   = document.getElementById("slider-hint");
+        const listenStatus = document.getElementById("listen-status");
+        const nextBtn      = document.getElementById("next-btn");
+        const canvas       = document.getElementById("viz-canvas");
+        const vizContainer = document.getElementById("viz-container");
+        const ctx2d        = canvas.getContext("2d");
 
         let hasListenedOnce = false;
         let freqData        = null;
@@ -258,7 +370,6 @@ async function init() {
         function fmt(s) {
           return Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
         }
-
         function cssVar(name) {
           return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
         }
@@ -307,8 +418,7 @@ async function init() {
           }
 
           if (audioEl.duration) {
-            const pct = audioEl.currentTime / audioEl.duration;
-            const px  = pct * W;
+            const px = (audioEl.currentTime / audioEl.duration) * W;
             ctx2d.strokeStyle = cssVar("--playhead");
             ctx2d.lineWidth   = 2;
             ctx2d.beginPath();
@@ -320,7 +430,9 @@ async function init() {
         }
 
         // ── Audio element ──────────────────────────────────────────────────
-        audioEl = new Audio(stim.file);
+        audioEl = new Audio();
+        audioEl.crossOrigin = "anonymous"; // required for Web Audio API + external URLs
+        audioEl.src = stim.file;
 
         audioEl.addEventListener("canplaythrough", function () {
           playBtn.disabled        = false;
@@ -338,17 +450,27 @@ async function init() {
           playBtn.textContent = "⏸";
           playBtn.title       = "Pause";
           if (!t_audio_start) t_audio_start = Date.now();
+
+          // Wire Web Audio API on first play; degrade gracefully on CORS failure
           if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 256;
-            analyser.smoothingTimeConstant = 0.78;
-            const source = audioCtx.createMediaElementSource(audioEl);
-            source.connect(analyser);
-            analyser.connect(audioCtx.destination);
-            freqData = new Uint8Array(analyser.frequencyBinCount);
+            try {
+              const WACtx = window.AudioContext || /** @type {any} */ (window).webkitAudioContext;
+              audioCtx = new WACtx();
+              analyser = audioCtx.createAnalyser();
+              analyser.fftSize = 256;
+              analyser.smoothingTimeConstant = 0.78;
+              const source = audioCtx.createMediaElementSource(audioEl);
+              source.connect(analyser);
+              analyser.connect(audioCtx.destination);
+              freqData = new Uint8Array(analyser.frequencyBinCount);
+            } catch (e) {
+              // CORS or policy error – visualizer runs in idle mode, audio still plays
+              console.warn("Web Audio API unavailable:", e.message);
+              if (audioCtx) { audioCtx.close(); audioCtx = null; }
+              analyser = null;
+            }
           }
-          if (audioCtx.state === "suspended") audioCtx.resume();
+          if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
         });
 
         audioEl.addEventListener("pause", function () {
@@ -364,7 +486,7 @@ async function init() {
             t_audio_end     = Date.now();
             slider.disabled = false;
             vizContainer.classList.add("seekable");
-            sliderHint.textContent   = C.trial.sliderReady;
+            sliderHint.textContent = C.trial.sliderReady;
             sliderHint.classList.add("hint-active");
             listenStatus.textContent = C.trial.rateNow;
             listenStatus.classList.add("status-ready");
@@ -417,6 +539,8 @@ async function init() {
         data.stim_file           = stim.file;
         data.stim_group          = stim.group || "";
         data.block_type          = blockType;
+        data.trial_num           = trialNum;
+        data.trial_total         = totalTrials;
         data.participant_id      = participant_id;
         data.access_code         = access_code;
         data.t_trial_start       = t_trial_start;
@@ -448,9 +572,37 @@ async function init() {
     choices: [C.practiceIntro.buttonLabel],
   };
 
-  const practiceTrials = practiceStimuli.map(s => buildRatingTrial(s, "practice"));
+  const practiceTrials = practiceStimuli.map((s, i) =>
+    buildRatingTrial(s, "practice", i + 1, practiceStimuli.length)
+  );
 
-  const mainStimuli = stimuli.filter(s => s.group !== "practice");
+  // ==========================================================================
+  // Main block + break at midpoint
+  // ==========================================================================
+
+  const mainStimuli  = stimuli.filter(s => s.group !== "practice");
+  const shuffled     = jsPsych.randomization.shuffle(mainStimuli);
+  const total        = shuffled.length;
+  const midpoint     = Math.ceil(total / 2);
+
+  const breakScreen = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: `
+      <div class="instructions-container">
+        <h2>${C.breakScreen.title}</h2>
+        ${C.breakScreen.paragraphs.map(p => `<p>${p}</p>`).join("")}
+      </div>`,
+    choices: [C.breakScreen.buttonLabel],
+  };
+
+  const mainTrials = shuffled.map((s, i) =>
+    buildRatingTrial(s, "main", i + 1, total)
+  );
+
+  // Splice break screen after the midpoint trial (only if > 4 main trials)
+  const mainWithBreak = total > 4
+    ? [...mainTrials.slice(0, midpoint), breakScreen, ...mainTrials.slice(midpoint)]
+    : mainTrials;
 
   const practiceEnd = {
     type: jsPsychHtmlButtonResponse,
@@ -458,17 +610,10 @@ async function init() {
       <div class="instructions-container">
         <h2>${C.practiceEnd.title}</h2>
         <p>${C.practiceEnd.body}</p>
-        <p>The main session consists of <strong>${mainStimuli.length} excerpts</strong>.</p>
+        <p>The main session consists of <strong>${total} excerpts</strong>.</p>
       </div>`,
     choices: [C.practiceEnd.buttonLabel],
   };
-
-  // ==========================================================================
-  // Main block
-  // ==========================================================================
-
-  const shuffled   = jsPsych.randomization.shuffle(mainStimuli);
-  const mainTrials = shuffled.map(s => buildRatingTrial(s, "main"));
 
   // ==========================================================================
   // Debrief
@@ -506,8 +651,9 @@ async function init() {
     ageTrial,
     questionnaireTrial,
     valenceConcept,
+    ...headphoneCheckTrials,
     ...(hasPractice ? [practiceIntro, ...practiceTrials, practiceEnd] : []),
-    ...mainTrials,
+    ...mainWithBreak,
     debriefTrial,
   ];
 
@@ -515,7 +661,7 @@ async function init() {
 }
 
 // ============================================================================
-// submitData()
+// submitData() – with localStorage backup + download fallback
 // ============================================================================
 
 const IS_MOCK = SCRIPT_URL.startsWith("REPLACE_WITH");
@@ -531,9 +677,13 @@ async function submitData(jsPsych) {
   const payload = {
     code:           access_code,
     participant_id: participant_id,
-    demographics:   demographics,   // age, questionnaire, debrief — sent once
+    demographics:   demographics,
     trials:         ratingTrials,
   };
+
+  // ── Save to localStorage before attempting network POST ──────────────────
+  const backupKey = BACKUP_PREFIX + participant_id;
+  try { localStorage.setItem(backupKey, JSON.stringify(payload)); } catch (e) {}
 
   if (IS_MOCK) {
     console.log("=== MOCK SUBMIT ===");
@@ -559,26 +709,40 @@ async function submitData(jsPsych) {
     });
     if (!resp.ok) throw new Error(`Server returned HTTP ${resp.status}`);
     const result = await resp.json();
-    if (result.status === "ok") {
-      display.innerHTML = `
-        <div class="status-message">
-          <h2>Submission Complete</h2>
-          <p>Your responses have been recorded. Thank you for participating!</p>
-        </div>`;
-    } else {
-      throw new Error(result.error || "Unknown server error");
-    }
+    if (result.status !== "ok") throw new Error(result.error || "Unknown error");
+
+    // ── Success – clear backup ───────────────────────────────────────────
+    try { localStorage.removeItem(backupKey); } catch (e) {}
+
+    display.innerHTML = `
+      <div class="status-message">
+        <h2>Submission Complete</h2>
+        <p>Your responses have been recorded. Thank you for participating!</p>
+        <p style="font-size:0.85rem;color:var(--text-faint)">Reference ID: ${participant_id}</p>
+      </div>`;
+
   } catch (err) {
     console.error("Submission error:", err);
+
+    // ── Failure – offer data download ────────────────────────────────────
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url  = URL.createObjectURL(blob);
+
     display.innerHTML = `
       <div class="status-message error">
         <h2>Submission Error</h2>
-        <p>There was a problem submitting your data. Please contact the researcher.</p>
-        <p><strong>Participant ID:</strong> ${participant_id}</p>
-        <p><strong>Error:</strong> ${err.message}</p>
+        <p>There was a problem sending your data automatically.</p>
+        <p>Please <strong>download your data file</strong> and email it to the researcher.</p>
+        <a href="${url}" download="valence_${participant_id}.json" class="jspsych-btn download-btn">
+          Download my data
+        </a>
+        <p style="margin-top:20px;font-size:0.85rem;color:var(--text-faint)">
+          Participant ID: ${participant_id}<br/>
+          Error: ${err.message}
+        </p>
       </div>`;
   }
 }
 
-// ── Start ─────────────────────────────────────────────────────────────────────
+// ── Start ──────────────────────────────────────────────────────────────────────
 init();

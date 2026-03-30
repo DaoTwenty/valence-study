@@ -172,6 +172,35 @@ const CONTENT = {
   },
 
   // --------------------------------------------------------------------------
+  // Headphone check (3 dichotic lateralization trials)
+  // --------------------------------------------------------------------------
+  headphoneCheck: {
+    title: "Headphone Check",
+    instruction: "Press <strong>Play</strong> and listen carefully, then answer which ear heard the sound.",
+    playLabel:   "▶ Play sound",
+    playingLabel:"♪ Playing…",
+    replayLabel: "↻ Play again",
+    question:    "Which ear heard the sound?",
+    choices:     ["Left ear", "Right ear", "Both / Not sure"],
+    resultPass:  "✓ Headphones confirmed — you're good to go!",
+    resultFail:  "⚠ We couldn't confirm headphone use. For best results, please use headphones.",
+    buttonLabel: "Continue",
+  },
+
+  // --------------------------------------------------------------------------
+  // Break screen (shown at the midpoint of the main block)
+  // --------------------------------------------------------------------------
+  breakScreen: {
+    title: "Halfway there — take a short break",
+    paragraphs: [
+      "You've completed the first half of the excerpts.",
+      "Take a moment to rest, stretch, or adjust your volume if needed.",
+      "There's no time limit — continue when you're ready.",
+    ],
+    buttonLabel: "I'm ready to continue",
+  },
+
+  // --------------------------------------------------------------------------
   // Debrief
   // --------------------------------------------------------------------------
   debrief: {

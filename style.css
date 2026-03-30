@@ -197,6 +197,84 @@ label {
 .jspsych-survey-multi-choice-option label    { color: var(--text) !important; }
 .jspsych-survey-multi-choice-option input[type="radio"] { accent-color: var(--accent); }
 
+/* ── Headphone check ────────────────────────────────────────────────────── */
+.headphone-check {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 36px 48px;
+  max-width: 560px;
+  margin: 0 auto;
+  text-align: center;
+}
+.headphone-check h2 { margin-bottom: 12px; }
+
+.check-counter {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--text-faint);
+  margin-left: 8px;
+}
+
+.tone-btn {
+  display: inline-block;
+  margin: 20px auto 16px;
+  padding: 12px 32px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.tone-btn:hover:not(:disabled) { background: var(--accent); color: #fff; }
+.tone-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.hp-question {
+  color: var(--text-faint);
+  font-size: 0.9rem;
+  opacity: 0;
+  transition: opacity 0.3s;
+  margin: 8px 0 0;
+}
+.hp-question-visible { opacity: 1; }
+
+.hp-pass { color: var(--success); font-weight: 500; }
+.hp-fail { color: var(--danger);  font-weight: 500; }
+
+/* ── Trial progress bar ─────────────────────────────────────────────────── */
+.trial-progress {
+  height: 3px;
+  background: var(--surface-2);
+  border-radius: 2px;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+.trial-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.trial-counter {
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 16px;
+}
+.practice-label { color: var(--accent); }
+
+/* ── Download button (error fallback) ───────────────────────────────────── */
+.download-btn {
+  display: inline-block;
+  margin-top: 16px;
+  text-decoration: none;
+}
+
 /* ── Rating trial ───────────────────────────────────────────────────────── */
 .rating-trial {
   max-width: 640px;

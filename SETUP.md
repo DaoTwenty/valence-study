@@ -1,5 +1,21 @@
 # Setup & Deployment Checklist
 
+## Audio hosting via Google Drive
+
+GitHub can't serve large audio files. Host them on Google Drive instead:
+
+1. Upload all `.wav` files to a Google Drive folder.
+2. Right-click the folder → **Share → Anyone with the link → Viewer**.
+3. For each file, get the direct download URL:
+   - Open the file in Drive, copy its file ID from the URL:
+     `https://drive.google.com/file/d/FILE_ID/view`
+   - Direct URL format:
+     `https://drive.google.com/uc?export=download&id=FILE_ID`
+4. Edit `scripts/build-stimuli.js` — replace the local path mapping with the Drive URLs, OR maintain a manual `stimuli.json` with `"file": "https://drive.google.com/uc?export=download&id=FILE_ID"` for each stimulus.
+5. **CORS note:** Google Drive direct-download URLs work for audio playback in the browser but will block the Web Audio API visualizer (CORS restriction). The audio still plays and all data is collected — only the frequency bars fall back to the idle flat line. If the visualizer matters, host on a CORS-enabled server (university web server, AWS S3 with a CORS policy, etc.).
+
+---
+
 ## Local preview (do this first)
 
 ```bash
