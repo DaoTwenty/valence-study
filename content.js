@@ -31,8 +31,8 @@ const CONTENT = {
       "<strong>Duration:</strong> Approximately 30 minutes.",
 
       "<strong>Procedures:</strong> You will listen to a series of short musical excerpts " +
-      "(~30 seconds each) and rate the emotional valence (pleasantness/unpleasantness) " +
-      "of each excerpt using a slider scale.",
+      "(~30 seconds each) and rate the <strong>valence</strong> of each excerpt — " +
+      "how positive or negative the emotion you feel from the music is — using a slider scale.",
 
       "<strong>Voluntary Participation:</strong> Your participation is entirely voluntary. " +
       "You may withdraw at any time without penalty by closing this window.",
@@ -56,12 +56,15 @@ const CONTENT = {
       "Complete this study in a <strong>quiet environment</strong>.",
       "Set your volume to a <strong>comfortable listening level</strong> before starting.",
       // Note: excerpt count is inserted automatically by experiment.js
-      "After each excerpt, rate <strong>how pleasant or unpleasant the emotion evoked " +
-      "by the music feels</strong> using a slider.",
+      "After each excerpt, rate <strong>how positive or negative the emotion you feel " +
+      "from the music is overall</strong> using a slider.",
+      "This rating is about <strong>your emotional reaction</strong>, not about how much " +
+      "you like or dislike the piece.",
+      "It is normal for two people to feel different emotions from the same music. " +
+      "There are <strong>no right or wrong answers</strong> — please respond based on your own experience.",
       "The slider is <strong>disabled during playback</strong> — it becomes active once " +
       "the excerpt finishes.",
       "You must <strong>move the slider</strong> before you can proceed to the next excerpt.",
-      "There are <strong>no right or wrong answers</strong> — respond based on your own impression.",
     ],
     buttonLabel: "Continue",
   },
@@ -122,18 +125,21 @@ const CONTENT = {
   valenceConcept: {
     title: 'What do we mean by "valence"?',
     paragraphs: [
-      "Emotions can feel more or less pleasant. In this study, we focus on " +
-      "<strong>valence</strong> — how <strong>pleasant or unpleasant</strong> the emotion feels.",
+      "Emotions can feel more or less <strong>positive or negative</strong>. In this study, " +
+      "we focus on <em>valence</em> — how positive or negative the emotion " +
+      "<strong>you feel from the music</strong> is overall.",
     ],
     items: [
-      "Music with <strong>low valence</strong> tends to feel unpleasant or negative " +
-      "(for example: tense, disturbing, anxious, or very sad in a painful way).",
-      "Music with <strong>high valence</strong> tends to feel pleasant or positive " +
-      "(for example: joyful, peaceful, comforting, or uplifting).",
+      "<strong>Negative valence:</strong> the music makes you feel tense, disturbed, anxious, " +
+      "or deeply sad in a painful way.",
+      "<strong>Positive valence:</strong> the music makes you feel joyful, peaceful, comforted, " +
+      "or uplifted.",
+      "You might sometimes feel a positive emotion from music you do not particularly like, " +
+      "or a negative emotion from music you do like — and that is perfectly fine.",
     ],
-    footer: "When you rate each excerpt, please think about <strong>how the music makes " +
-            "you feel emotionally</strong>, not whether you like the piece or consider it " +
-            "good or bad music. There are no right or wrong answers.",
+    footer: "Please focus on <strong>your own emotional state</strong> while listening, " +
+            "not on whether you enjoy the piece or consider it good music. " +
+            "There are no right or wrong answers.",
     buttonLabel: "I understand, let's begin the practice",
   },
 
@@ -162,12 +168,12 @@ const CONTENT = {
   // Rating trial
   // --------------------------------------------------------------------------
   trial: {
-    prompt:      "Please rate how pleasant or unpleasant the emotion evoked by this music feels to you.",
+    prompt:      "How positive or negative is the emotion you feel from this music overall?",
     listenFirst: "Listen to the excerpt before rating.",
     rateNow:     "✓ Now rate the excerpt and click Next.",
     sliderLocked: "Rating available after you listen to the full excerpt.",
     sliderReady:  "Move the slider to indicate your rating, then click Next.",
-    labels:      ["Very unpleasant", "Neutral", "Very pleasant"],
+    labels:      ["Very negative", "Neutral", "Very positive"],
     buttonLabel: "Next",
   },
 
