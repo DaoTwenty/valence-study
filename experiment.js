@@ -510,7 +510,7 @@ async function init() {
           delete container._clickTrace;
         }
 
-        data.response            = sliderValue;
+        data.valence_response    = sliderValue;
         data.stim_id             = stim.id;
         data.stim_file           = stim.file;
         data.stim_group          = stim.group || "";

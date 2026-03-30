@@ -66,7 +66,7 @@ function doPost(e) {
         t.stim_file           !== undefined ? t.stim_file           : "",
         t.block_type          !== undefined ? t.block_type          : "",
         t.trial_index         !== undefined ? t.trial_index         : "",
-        t.response            !== undefined ? t.response            : "",
+        t.valence_response    !== undefined ? t.valence_response    : "",
         t.rt                  !== undefined ? t.rt                  : "",
         t.t_trial_start       !== undefined ? t.t_trial_start       : "",
         t.t_audio_start       !== undefined ? t.t_audio_start       : "",
@@ -129,7 +129,7 @@ function setupSheets() {
     // Core
     "timestamp", "access_code", "code_valid", "participant_id",
     "stim_id", "stim_file", "block_type", "trial_index",
-    "response", "rt",
+    "valence_response", "rt",
     "t_trial_start", "t_audio_start", "t_audio_end", "t_first_slider_move",
     "audio_played_full", "slider_events_json", "mouse_clicks_json",
     // Demographics
