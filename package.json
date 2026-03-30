@@ -5,6 +5,8 @@
   "scripts": {
     "prestart": "node scripts/build-stimuli.js",
     "start": "npx live-server --port=3000 --host=localhost --no-browser",
+    "select": "node scripts/select-stimuli.js",
+    "finalize": "node scripts/finalize-selection.js",
     "setup": "node scripts/generate-dummy-audio.js"
   }
 }

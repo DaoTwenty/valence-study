@@ -38,22 +38,28 @@
   <button id="theme-toggle" title="Toggle dark/light mode" aria-label="Toggle theme">
     <span id="theme-icon">☀</span>
   </button>
+  <!-- jsPsych renders into this div so it doesn't wipe the toggle -->
+  <div id="jspsych-target"></div>
   <script>
     (function () {
       const btn  = document.getElementById("theme-toggle");
       const icon = document.getElementById("theme-icon");
-      const DARK = "dark", LIGHT = "light";
-      let current = localStorage.getItem("theme") || DARK;
+      const DARK = "dark", CREAM = "cream";
+      let current = localStorage.getItem("theme") || CREAM;
 
       function apply(theme) {
-        document.body.dataset.theme = theme;
+        if (theme === DARK) {
+          document.body.dataset.theme = "dark";
+        } else {
+          delete document.body.dataset.theme;
+        }
         icon.textContent = theme === DARK ? "☀" : "☾";
         localStorage.setItem("theme", theme);
         current = theme;
       }
       apply(current);
       btn.addEventListener("click", function () {
-        apply(current === DARK ? LIGHT : DARK);
+        apply(current === DARK ? CREAM : DARK);
       });
     })();
   </script>

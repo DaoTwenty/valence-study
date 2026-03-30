@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Stimulus Selector</title>
+<style>
+:root {
+  --bg:      #f5f0e8;
+  --surf:    #ede8de;
+  --surf2:   #e4ddd1;
+  --surf3:   #d9d0c2;
+  --border:  rgba(0,0,0,0.10);
+  --accent:  #7a6a52;
+  --green:   #5a7a52;
+  --red:     #a04040;
+  --yellow:  #8a6f30;
+  --text:    #2c2416;
+  --muted:   #8a7d6a;
+  --faint:   #c9c0b0;
+  --mono:    'JetBrains Mono','Fira Code','Consolas',monospace;
+}
+[data-theme="dark"] {
+  --bg:      #0d0f14;
+  --surf:    #13161f;
+  --surf2:   #1c2030;
+  --surf3:   #222640;
+  --border:  rgba(255,255,255,0.07);
+  --accent:  #6c8ef5;
+  --green:   #4db87a;
+  --red:     #e05c5c;
+  --yellow:  #e0b04a;
+  --text:    #dde1f0;
+  --muted:   #6b7194;
+  --faint:   #2a2d45;
+}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none}
+
+/* ── Topbar ── */
+#topbar{display:flex;align-items:center;gap:14px;padding:8px 18px;background:var(--surf);border-bottom:1px solid var(--border);flex-shrink:0}
+.title{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.title span{color:var(--accent)}
+#params{display:flex;gap:10px;align-items:center;margin-left:auto}
+#params label{font-size:10px;color:var(--muted)}
+#params input[type=number]{width:48px;background:var(--surf2);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:var(--mono);font-size:12px;padding:3px 6px;text-align:center}
+#params input:focus{outline:none;border-color:var(--accent)}
+.btn{font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:4px 12px;border-radius:3px;border:1px solid var(--border);background:var(--surf2);color:var(--text);cursor:pointer;transition:background .12s,border-color .12s,color .12s}
+.btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.export{border-color:var(--green);color:var(--green)}
+.btn.export:hover{background:var(--green)}
+.btn.danger:hover{background:var(--red);border-color:var(--red)}
+
+/* ── Body ── */
+#body{display:flex;flex:1;overflow:hidden}
+
+/* ── Bin sidebar ── */
+#sidebar{width:168px;flex-shrink:0;background:var(--surf);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sh{padding:8px 12px 6px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);flex-shrink:0}
+
+.bin-tab{padding:8px 12px;cursor:pointer;border-left:2px solid transparent;transition:background .1s,border-color .1s}
+.bin-tab:hover{background:var(--surf2)}
+.bin-tab.active{background:var(--surf2);border-left-color:var(--accent)}
+.bin-tab .br{font-size:9px;color:var(--muted);margin-bottom:3px}
+.bin-tab .bc{display:flex;align-items:center;gap:5px}
+.bin-tab .bb{flex:1;height:3px;background:var(--faint);border-radius:2px;overflow:hidden}
+.bin-tab .bf{height:100%;background:var(--accent);transition:width .3s}
+.bin-tab .bf.full{background:var(--green)}
+.bin-tab .bn{font-size:9px;color:var(--muted);white-space:nowrap}
+.bin-tab .bn.full{color:var(--green)}
+
+/* ── Main area ── */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── SET row ── */
+#set-area{flex-shrink:0;border-bottom:1px solid var(--border);background:var(--surf);padding:12px 16px 14px}
+#set-header{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+#set-header .set-hint{color:var(--faint)}
+#set-slots{display:flex;gap:8px;flex-wrap:wrap}
+
+.slot{
+  width:130px;height:72px;border-radius:6px;border:1px solid var(--border);
+  background:var(--surf2);display:flex;flex-direction:column;justify-content:center;
+  align-items:center;cursor:pointer;transition:border-color .15s,background .15s;
+  position:relative;flex-shrink:0;gap:4px;
+}
+.slot.empty{border-style:dashed;border-color:var(--faint)}
+.slot.empty:hover{border-color:var(--muted)}
+.slot.selected{border-color:var(--accent);background:var(--surf3);box-shadow:0 0 0 1px var(--accent)}
+.slot.playing{border-color:var(--accent)}
+.slot .s-id{font-size:12px;color:var(--accent);font-weight:500}
+.slot .s-val{font-size:10px;color:var(--muted)}
+.slot .s-play{position:absolute;bottom:6px;right:7px;font-size:9px;color:var(--faint);transition:color .1s}
+.slot:hover .s-play{color:var(--muted)}
+.slot.playing .s-play{color:var(--accent)}
+.slot .s-remove{position:absolute;top:4px;right:5px;font-size:9px;color:var(--faint);line-height:1;transition:color .1s}
+.slot:hover .s-remove{color:var(--red)}
+.slot.empty .s-num{font-size:22px;color:var(--faint)}
+
+/* ── Pool ── */
+#pool-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#pool-header{padding:9px 16px 7px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
+#pool-header .pool-hint{color:var(--accent)}
+#pool-list{flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
+
+.card{
+  width:130px;height:72px;border-radius:6px;border:1px solid var(--border);
+  background:var(--surf2);display:flex;flex-direction:column;justify-content:center;
+  align-items:center;cursor:pointer;transition:border-color .15s,background .15s;
+  position:relative;flex-shrink:0;gap:4px;
+}
+.card:hover{border-color:var(--muted);background:var(--surf3)}
+.card.playing{border-color:var(--accent);background:var(--surf3)}
+.card.in-set{opacity:.28;cursor:default;pointer-events:none}
+.card .c-id{font-size:12px;color:var(--text);font-weight:500}
+.card .c-val{font-size:10px;color:var(--muted)}
+.card .c-play{position:absolute;bottom:5px;right:7px;font-size:9px;color:var(--faint);transition:color .1s}
+.card:hover .c-play{color:var(--muted)}
+.card.playing .c-play{color:var(--accent)}
+
+/* Highlight pool card when a slot is selected */
+.card.swap-target{border-color:var(--yellow);background:rgba(138,111,48,.08)}
+.card.swap-target:hover{border-color:var(--yellow);background:rgba(138,111,48,.16)}
+
+/* ── Stats sidebar ── */
+#stats{width:160px;flex-shrink:0;background:var(--surf);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+#sc{padding:12px 12px;display:flex;flex-direction:column;gap:14px}
+.st-label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.st-val{font-size:20px;font-weight:600;color:var(--accent)}
+.st-val.done{color:var(--green)}
+.dist-row{display:flex;align-items:center;gap:5px;margin-bottom:2px}
+.d-lbl{font-size:9px;color:var(--muted);width:14px;text-align:right}
+.d-bar{flex:1;height:5px;background:var(--faint);border-radius:2px;overflow:hidden}
+.d-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s}
+.d-fill.full{background:var(--green)}
+.d-n{font-size:9px;color:var(--muted);width:24px}
+
+/* ── Status bar ── */
+#statusbar{padding:5px 16px;background:var(--surf);border-top:1px solid var(--border);display:flex;align-items:center;gap:14px;font-size:10px;color:var(--muted);flex-shrink:0}
+#now-playing{color:var(--accent);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.keys{color:var(--faint);font-size:9px}
+.key{border:1px solid var(--faint);border-radius:2px;padding:0 3px;font-size:8px;color:var(--faint);margin:0 1px}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--faint);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="title">stimulus <span>selector</span></div>
+  <div id="params">
+    <label>trials</label><input type="number" id="p-trials" value="20" min="1" max="200"/>
+    <label>bins</label><input type="number" id="p-bins" value="10" min="1" max="50"/>
+    <button class="btn" id="btn-apply">apply</button>
+    <button class="btn export" id="btn-export">export</button>
+    <button class="btn danger" id="btn-reset">reset</button>
+    <button class="btn" id="btn-theme" title="Toggle light/dark">☾</button>
+  </div>
+</div>
+<script>
+  (function(){
+    const btn = document.getElementById("btn-theme");
+    let dark = localStorage.getItem("sel-theme") === "dark";
+    function apply(){ document.body.dataset.theme = dark ? "dark" : ""; btn.textContent = dark ? "☀" : "☾"; localStorage.setItem("sel-theme", dark ? "dark" : "light"); }
+    apply();
+    btn.addEventListener("click", function(){ dark = !dark; apply(); });
+  })();
+</script>
+
+<div id="body">
+  <div id="sidebar">
+    <div class="sh">bins</div>
+    <div id="bin-tabs"></div>
+  </div>
+
+  <div id="main">
+    <div id="set-area">
+      <div id="set-header">
+        <span id="set-bin-label">bin 0</span>
+        <span class="set-hint">· click slot to select, then click pool card to swap</span>
+      </div>
+      <div id="set-slots"></div>
+    </div>
+    <div id="pool-area">
+      <div id="pool-header">
+        <span>pool</span>
+        <span class="pool-hint" id="pool-hint"></span>
+      </div>
+      <div id="pool-list"></div>
+    </div>
+  </div>
+
+  <div id="stats">
+    <div class="sh">overview</div>
+    <div id="sc">
+      <div>
+        <div class="st-label">selected</div>
+        <div class="st-val" id="s-total">0 / 0</div>
+      </div>
+      <div>
+        <div class="st-label">mean valence</div>
+        <div class="st-val" style="font-size:15px;color:var(--green)" id="s-mean">—</div>
+      </div>
+      <div>
+        <div class="st-label">distribution</div>
+        <div id="s-dist"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="statusbar">
+  <span id="now-playing">no audio playing</span>
+  <span class="keys">
+    <span class="key">space</span> play
+    <span class="key">←→</span> bin
+    <span class="key">↑↓</span> pool
+    <span class="key">enter</span> swap
+  </span>
+</div>
+
+<script>
+let entries = [], bins = [], slots = [], selected = {};
+// selected[binIdx] = [id, id, null, id, ...]  (null = empty slot)
+let activeBin    = 0;
+let activeSlot   = null;   // index within set (null = none)
+let poolFocus    = 0;      // keyboard focus in pool
+let TRIALS = 20, NBINS = 10;
+
+// Audio
+let audioEl = null, playingId = null;
+
+// ── Load ──────────────────────────────────────────────────────────────────────
+async function load() {
+  const resp = await fetch("audio_candidates/index.json");
+  const all  = await resp.json();
+  entries    = all.filter(e => e.audio_output_path);
+  loadSession();
+  applyParams();
+}
+
+// ── Params ────────────────────────────────────────────────────────────────────
+function applyParams() {
+  TRIALS = parseInt(document.getElementById("p-trials").value) || 20;
+  NBINS  = parseInt(document.getElementById("p-bins").value)   || 10;
+
+  const vals = entries.map(e => e.valence_fused);
+  const vMin = Math.min(...vals), vMax = Math.max(...vals);
+  const bw   = (vMax - vMin) / NBINS;
+
+  entries.forEach(e => {
+    e._bin  = Math.min(NBINS - 1, Math.floor((e.valence_fused - vMin) / bw));
+    e._vMin = vMin; e._bw = bw;
+  });
+
+  bins = Array.from({ length: NBINS }, (_, i) => ({
+    idx: i,
+    lo:  (vMin + i * bw).toFixed(2),
+    hi:  (vMin + (i + 1) * bw).toFixed(2),
+    entries: entries.filter(e => e._bin === i),
+  }));
+
+  const base = Math.floor(TRIALS / NBINS), extra = TRIALS % NBINS;
+  slots = Array.from({ length: NBINS }, (_, i) => base + (i < extra ? 1 : 0));
+
+  // Initialise selected arrays (preserve existing choices where possible)
+  selected = Array.from({ length: NBINS }, (_, i) => {
+    const prev = selected[i] || [];
+    const need = slots[i];
+    const out  = Array(need).fill(null);
+    prev.forEach((id, j) => { if (j < need && id) out[j] = id; });
+    return out;
+  });
+
+  renderSidebar();
+  selectBin(Math.min(activeBin, NBINS - 1));
+  updateStats();
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+function renderSidebar() {
+  const el = document.getElementById("bin-tabs");
+  el.innerHTML = "";
+  bins.forEach((bin, i) => {
+    const have = selected[i].filter(Boolean).length;
+    const need = slots[i];
+    const full = have >= need;
+    const d = document.createElement("div");
+    d.className = "bin-tab" + (i === activeBin ? " active" : "");
+    d.innerHTML = `
+      <div class="br">${bin.lo} – ${bin.hi}</div>
+      <div class="bc">
+        <div class="bb"><div class="bf${full?" full":""}" style="width:${need?Math.min(100,(have/need)*100):0}%"></div></div>
+        <div class="bn${full?" full":""}">${have}/${need}</div>
+      </div>`;
+    d.addEventListener("click", () => selectBin(i));
+    el.appendChild(d);
+  });
+}
+
+// ── Select bin ────────────────────────────────────────────────────────────────
+function selectBin(idx) {
+  activeBin  = idx;
+  activeSlot = null;
+  poolFocus  = 0;
+  document.querySelectorAll(".bin-tab").forEach((t, i) => t.classList.toggle("active", i === idx));
+  renderSet();
+  renderPool();
+}
+
+// ── SET ───────────────────────────────────────────────────────────────────────
+function renderSet() {
+  const bin   = bins[activeBin];
+  const arr   = selected[activeBin];
+  const need  = slots[activeBin];
+  const have  = arr.filter(Boolean).length;
+
+  document.getElementById("set-bin-label").textContent =
+    `bin ${activeBin}  ·  ${bin.lo} – ${bin.hi}  ·  ${have}/${need}`;
+
+  const wrap = document.getElementById("set-slots");
+  wrap.innerHTML = "";
+
+  for (let i = 0; i < need; i++) {
+    const id   = arr[i];
+    const entry = id ? entries.find(e => e.sample_id === id) : null;
+    const isPlaying = id && playingId === id;
+    const isSel = activeSlot === i;
+
+    const div = document.createElement("div");
+    div.className = "slot" +
+      (id ? "" : " empty") +
+      (isSel ? " selected" : "") +
+      (isPlaying ? " playing" : "");
+    div.dataset.slotIdx = i;
+
+    if (id && entry) {
+      div.innerHTML = `
+        <div class="s-id">${entry.sample_id}</div>
+        <div class="s-val">${entry.valence_fused.toFixed(3)}</div>
+        <div class="s-play">${isPlaying ? "⏸" : "▶"}</div>
+        <div class="s-remove" title="remove">✕</div>`;
+
+      div.addEventListener("click", (e) => {
+        if (e.target.classList.contains("s-remove")) { removeFromSlot(i); return; }
+        if (e.target.classList.contains("s-play") || isPlaying) { togglePlayEntry(entry); return; }
+        activeSlot = isSel ? null : i;
+        renderSet(); renderPool();
+      });
+      div.querySelector(".s-play").addEventListener("click", (e) => {
+        e.stopPropagation(); togglePlayEntry(entry);
+      });
+    } else {
+      div.innerHTML = `<div class="s-num">${i + 1}</div>`;
+      div.addEventListener("click", () => {
+        activeSlot = isSel ? null : i;
+        renderSet(); renderPool();
+      });
+    }
+
+    wrap.appendChild(div);
+  }
+}
+
+function removeFromSlot(slotIdx) {
+  selected[activeBin][slotIdx] = null;
+  if (activeSlot === slotIdx) activeSlot = null;
+  saveSession(); renderSet(); renderPool(); renderSidebar(); updateStats();
+}
+
+// ── POOL ──────────────────────────────────────────────────────────────────────
+function renderPool() {
+  const bin    = bins[activeBin];
+  const setIds = new Set(selected[activeBin].filter(Boolean));
+  const pool   = bin.entries;
+  const hasSel = activeSlot !== null;
+
+  const hint = document.getElementById("pool-hint");
+  hint.textContent = hasSel
+    ? `← slot ${activeSlot + 1} selected — click a card to swap in`
+    : `${pool.length} candidates`;
+  hint.style.color = hasSel ? "var(--yellow)" : "var(--accent)";
+
+  const wrap = document.getElementById("pool-list");
+  wrap.innerHTML = "";
+
+  pool.forEach((entry, i) => {
+    const inSet    = setIds.has(entry.sample_id);
+    const isPlay   = playingId === entry.sample_id;
+    const isFocus  = poolFocus === i;
+
+    const div = document.createElement("div");
+    div.className = "card" +
+      (inSet ? " in-set" : "") +
+      (isPlay ? " playing" : "") +
+      (!inSet && hasSel ? " swap-target" : "");
+    div.dataset.poolIdx = i;
+    div.style.outline   = (!inSet && isFocus) ? "1px solid var(--accent)" : "";
+
+    div.innerHTML = `
+      <div class="c-id">${entry.sample_id}</div>
+      <div class="c-val">${entry.valence_fused.toFixed(3)}</div>
+      <div class="c-play">${isPlay ? "⏸" : "▶"}</div>`;
+
+    div.addEventListener("click", (e) => {
+      if (inSet) return;
+      if (e.target.classList.contains("c-play") || (!hasSel && isPlay)) {
+        togglePlayEntry(entry); poolFocus = i; return;
+      }
+      if (hasSel) { swapIntoSlot(entry.sample_id); }
+      else { togglePlayEntry(entry); poolFocus = i; }
+    });
+
+    wrap.appendChild(div);
+  });
+}
+
+function swapIntoSlot(id) {
+  selected[activeBin][activeSlot] = id;
+  activeSlot = null;
+  saveSession(); renderSet(); renderPool(); renderSidebar(); updateStats();
+}
+
+// ── Audio ─────────────────────────────────────────────────────────────────────
+function togglePlayEntry(entry) {
+  const filename = entry.audio_output_path.split("/").pop();
+  const src = "audio_candidates/audio/" + filename;
+
+  if (playingId === entry.sample_id) {
+    if (audioEl && !audioEl.paused) { audioEl.pause(); return; }
+    if (audioEl &&  audioEl.paused) { audioEl.play();  return; }
+  }
+  if (audioEl) { audioEl.pause(); audioEl.src = ""; }
+
+  playingId = entry.sample_id;
+  audioEl   = new Audio(src);
+
+  const np = document.getElementById("now-playing");
+  audioEl.addEventListener("play",  () => { np.textContent = `▶ ${entry.sample_id}  v=${entry.valence_fused.toFixed(3)}`; rerenderPlaying(); });
+  audioEl.addEventListener("pause", () => { np.textContent = `⏸ ${entry.sample_id}  v=${entry.valence_fused.toFixed(3)}`; rerenderPlaying(); });
+  audioEl.addEventListener("ended", () => { playingId = null; np.textContent = "no audio playing"; rerenderPlaying(); });
+  audioEl.play().catch(() => {});
+}
+
+function rerenderPlaying() { renderSet(); renderPool(); }
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+function updateStats() {
+  const all  = selected.flatMap(arr => arr.filter(Boolean));
+  const done = all.length;
+  const el   = document.getElementById("s-total");
+  el.textContent = `${done} / ${TRIALS}`;
+  el.className   = "st-val" + (done >= TRIALS ? " done" : "");
+
+  if (done > 0) {
+    const vals = all.map(id => entries.find(e => e.sample_id === id)?.valence_fused || 0);
+    document.getElementById("s-mean").textContent =
+      (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(3);
+  } else {
+    document.getElementById("s-mean").textContent = "—";
+  }
+
+  const dist = document.getElementById("s-dist");
+  dist.innerHTML = bins.map((_, i) => {
+    const have = selected[i].filter(Boolean).length;
+    const need = slots[i];
+    const full = have >= need;
+    const pct  = need ? Math.min(100, (have / need) * 100) : 0;
+    return `<div class="dist-row">
+      <div class="d-lbl">${i}</div>
+      <div class="d-bar"><div class="d-fill${full?" full":""}" style="width:${pct}%"></div></div>
+      <div class="d-n">${have}/${need}</div>
+    </div>`;
+  }).join("");
+}
+
+// ── Keyboard ──────────────────────────────────────────────────────────────────
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT") return;
+
+  if (e.key === "ArrowLeft")  { e.preventDefault(); selectBin(Math.max(activeBin - 1, 0)); return; }
+  if (e.key === "ArrowRight") { e.preventDefault(); selectBin(Math.min(activeBin + 1, NBINS - 1)); return; }
+
+  const bin  = bins[activeBin];
+  const pool = bin.entries.filter(e => !selected[activeBin].filter(Boolean).includes(e.sample_id));
+
+  if (e.key === "ArrowDown")  { e.preventDefault(); poolFocus = Math.min(poolFocus + 1, pool.length - 1); renderPool(); scrollPoolFocus(); }
+  if (e.key === "ArrowUp")    { e.preventDefault(); poolFocus = Math.max(poolFocus - 1, 0); renderPool(); scrollPoolFocus(); }
+
+  if (e.code === "Space") {
+    e.preventDefault();
+    const entry = pool[poolFocus];
+    if (entry) togglePlayEntry(entry);
+  }
+
+  if (e.key === "Enter") {
+    const entry = pool[poolFocus];
+    if (entry && activeSlot !== null) { swapIntoSlot(entry.sample_id); }
+    else if (entry) {
+      // Auto-fill next empty slot
+      const emptyIdx = selected[activeBin].indexOf(null);
+      if (emptyIdx !== -1) { activeSlot = emptyIdx; swapIntoSlot(entry.sample_id); }
+    }
+  }
+
+  // Number keys 1–9 to select slot
+  const num = parseInt(e.key);
+  if (!isNaN(num) && num >= 1 && num <= slots[activeBin]) {
+    activeSlot = num - 1;
+    renderSet(); renderPool();
+  }
+});
+
+function scrollPoolFocus() {
+  const el = document.querySelector(`.card[data-pool-idx="${poolFocus}"]`);
+  if (el) el.scrollIntoView({ block: "nearest" });
+}
+
+// ── Session ───────────────────────────────────────────────────────────────────
+const SK = "stim_sel_v2";
+function saveSession() { localStorage.setItem(SK, JSON.stringify({ selected, TRIALS, NBINS })); }
+function loadSession() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SK) || "{}");
+    if (s.selected) {
+      selected = s.selected;
+      if (s.TRIALS) document.getElementById("p-trials").value = TRIALS = s.TRIALS;
+      if (s.NBINS)  document.getElementById("p-bins").value   = NBINS  = s.NBINS;
+    }
+  } catch(_) {}
+}
+
+// ── Export ────────────────────────────────────────────────────────────────────
+document.getElementById("btn-export").addEventListener("click", () => {
+  const all = selected.flatMap((arr, binIdx) =>
+    arr.filter(Boolean).map(id => {
+      const e = entries.find(x => x.sample_id === id);
+      return { id, file: e.audio_output_path.split("/").pop(), valence: e.valence_fused, bin: binIdx };
+    })
+  );
+  if (!all.length) { alert("Nothing selected."); return; }
+
+  const mean = all.reduce((s, e) => s + e.valence, 0) / all.length;
+  const blob = new Blob([JSON.stringify({ trials: TRIALS, bins: NBINS, mean_valence: mean.toFixed(4), selected: all }, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "selection.json"; a.click();
+  document.getElementById("now-playing").textContent = "Exported selection.json — run: node scripts/finalize-selection.js";
+});
+
+document.getElementById("btn-reset").addEventListener("click", () => {
+  if (!confirm("Clear all selections?")) return;
+  selected = Array.from({ length: NBINS }, (_, i) => Array(slots[i]).fill(null));
+  saveSession(); renderSidebar(); selectBin(activeBin); updateStats();
+});
+
+document.getElementById("btn-apply").addEventListener("click", applyParams);
+["p-trials","p-bins"].forEach(id => {
+  document.getElementById(id).addEventListener("keydown", e => { if (e.key === "Enter") applyParams(); });
+});
+
+load().catch(err => {
+  document.getElementById("pool-list").innerHTML =
+    `<p style="padding:20px;color:var(--red)">Failed to load index.json: ${err.message}</p>`;
+});
+</script>
+</body>
+</html>

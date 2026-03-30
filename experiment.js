@@ -129,7 +129,7 @@ async function init() {
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     stimuli = await resp.json();
   } catch (err) {
-    document.body.innerHTML = `
+    document.getElementById("jspsych-target").innerHTML = `
       <div class="status-message error">
         <p><strong>Error loading stimuli.</strong></p>
         <p>Could not load <code>stimuli.json</code>: ${err.message}</p>
@@ -137,12 +137,13 @@ async function init() {
     return;
   }
   if (!stimuli.length) {
-    document.body.innerHTML = `<div class="status-message error"><p>stimuli.json is empty.</p></div>`;
+    document.getElementById("jspsych-target").innerHTML = `<div class="status-message error"><p>stimuli.json is empty.</p></div>`;
     return;
   }
 
   // ── jsPsych ───────────────────────────────────────────────────────────────
   const jsPsych = initJsPsych({
+    display_element: "jspsych-target",
     use_webaudio: true,
     on_finish: () => submitData(jsPsych),
   });
@@ -345,7 +346,7 @@ async function init() {
           return Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
         }
         function cssVar(name) {
-          return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+          return getComputedStyle(document.body).getPropertyValue(name).trim();
         }
 
         function draw() {
@@ -545,7 +546,7 @@ async function init() {
   };
 
   const practiceTrials = practiceStimuli.map((s, i) =>
-    buildRatingTrial(s, "practice", i + 1, practiceStimuli.length)
+    buildRatingTrial(s, "practice", i + 1, practiceStimuli.length, 10)
   );
 
   // ==========================================================================
@@ -716,4 +717,4 @@ async function submitData(jsPsych) {
 }
 
 // ── Start ──────────────────────────────────────────────────────────────────────
-init();
+document.addEventListener("DOMContentLoaded", init);

@@ -28,7 +28,7 @@ const CONTENT = {
       "emotions in computer-generated music. We are interested in your personal " +
       "emotional responses.",
 
-      "<strong>Duration:</strong> Approximately 20–30 minutes.",
+      "<strong>Duration:</strong> Approximately 30 minutes.",
 
       "<strong>Procedures:</strong> You will listen to a series of short musical excerpts " +
       "(~30 seconds each) and rate the emotional valence (pleasantness/unpleasantness) " +
