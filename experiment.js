@@ -15,7 +15,6 @@ let access_code      = "";
 const participant_id = generateParticipantId();
 
 const demographics = {
-  q_age:                "",
   q_musical_training:   "",
   q_formal_education:   "",
   q_listening_frequency:"",
@@ -210,32 +209,7 @@ async function init() {
   };
 
   // ==========================================================================
-  // SCREEN 4 – Age
-  // ==========================================================================
-
-  const ageTrial = {
-    type: jsPsychHtmlButtonResponse,
-    stimulus: `
-      <div class="access-code-container">
-        <h2>${C.age.title}</h2>
-        <label for="age-input">${C.age.label}</label>
-        <input type="number" id="age-input" min="1" max="120"
-               placeholder="${C.age.placeholder}" autocomplete="off" />
-      </div>`,
-    choices: [C.age.buttonLabel],
-    on_load: function () {
-      const el = document.getElementById("age-input");
-      if (el) el.addEventListener("input", () => { demographics.q_age = el.value.trim(); });
-    },
-    on_finish: function () {
-      const el = document.getElementById("age-input");
-      if (el) demographics.q_age = el.value.trim();
-      jsPsych.data.addProperties({ q_age: demographics.q_age });
-    },
-  };
-
-  // ==========================================================================
-  // SCREEN 5 – Musical Background
+  // SCREEN 4 – Musical Background
   // ==========================================================================
 
   const questionnaireTrial = {
@@ -430,9 +404,7 @@ async function init() {
         }
 
         // ── Audio element ──────────────────────────────────────────────────
-        audioEl = new Audio();
-        audioEl.crossOrigin = "anonymous"; // required for Web Audio API + external URLs
-        audioEl.src = stim.file;
+        audioEl = new Audio(stim.file);
 
         audioEl.addEventListener("canplaythrough", function () {
           playBtn.disabled        = false;
@@ -648,7 +620,6 @@ async function init() {
     accessCodeTrial,
     consentTrial,
     instructionsTrial,
-    ageTrial,
     questionnaireTrial,
     valenceConcept,
     ...headphoneCheckTrials,

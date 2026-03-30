@@ -76,7 +76,6 @@ function doPost(e) {
         JSON.stringify(t.slider_events || []),
         JSON.stringify(t.mouse_clicks  || []),
         // ── Demographics (same value on every trial row) ───────────────
-        demo.q_age                || "",
         demo.q_musical_training   || "",
         demo.q_formal_education   || "",
         demo.q_listening_frequency|| "",
@@ -133,7 +132,7 @@ function setupSheets() {
     "t_trial_start", "t_audio_start", "t_audio_end", "t_first_slider_move",
     "audio_played_full", "slider_events_json", "mouse_clicks_json",
     // Demographics
-    "q_age", "q_musical_training", "q_formal_education",
+    "q_musical_training", "q_formal_education",
     "q_listening_frequency", "debrief_comments",
     // Raw
     "raw_json",
